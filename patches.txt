@@ -1,0 +1,3 @@
+# Patches for Pharmacy Management
+# Format: path.to.module.function
+# Example: pharmacy_management.setup.patch_name

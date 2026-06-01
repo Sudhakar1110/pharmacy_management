@@ -63,10 +63,6 @@ permission_query_conditions = {
     "Prescription": "pharmacy_management.prescription.doctype.prescription.prescription.get_permission_query_conditions",
 }
 
-# Website Context
-website_context = {
-    "favicon": "/assets/pharmacy_management/images/favicon.ico",
-}
 
 # Notification Config
 notification_config = "pharmacy_management.notifications.get_notification_config"
