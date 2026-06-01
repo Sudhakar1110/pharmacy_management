@@ -7,7 +7,7 @@
  "icon": "healthcare",
  "is_hidden": 0,
  "label": "Pharmacy",
- "module": "Pharmacy",
+ "module": "Dashboard",
  "name": "Pharmacy",
  "public": 1,
  "roles": [{"role": "System Manager"}, {"role": "Pharmacy Administrator"}, {"role": "Pharmacist"}, {"role": "Store Manager"}, {"role": "Purchase Officer"}, {"role": "Pharmacy Cashier"}, {"role": "Pharmacy Auditor"}],

@@ -53,7 +53,7 @@ fixtures = [
         "Pharmacy Cashier",
         "Pharmacy Auditor",
     ]]]},
-    {"dt": "Workspace", "filters": [["module", "=", "Pharmacy"]]},
+    {"dt": "Workspace", "filters": [["module", "=", "Dashboard"]]},
     "Custom Field",
     "Property Setter",
 ]

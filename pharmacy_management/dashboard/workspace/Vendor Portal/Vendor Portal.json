@@ -7,7 +7,7 @@
  "icon": "truck",
  "is_hidden": 0,
  "label": "Vendor Portal",
- "module": "Pharmacy",
+ "module": "Dashboard",
  "name": "Vendor Portal",
  "public": 1,
  "roles": [{"role": "System Manager"}, {"role": "Pharmacy Administrator"}, {"role": "Purchase Officer"}, {"role": "Store Manager"}],
