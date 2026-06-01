@@ -10,7 +10,7 @@
  "module": "Prescription",
  "name": "Prescription",
  "public": 1,
- "roles": [{"role": "Pharmacy Administrator"}, {"role": "Pharmacist"}, {"role": "Pharmacy Auditor"}],
+ "roles": [{"role": "System Manager"}, {"role": "Pharmacy Administrator"}, {"role": "Pharmacist"}, {"role": "Pharmacy Auditor"}],
  "sequence_id": 6,
  "shortcuts": [
   {"doc_view": "List", "label": "Prescription", "link_to": "Prescription", "type": "DocType"},

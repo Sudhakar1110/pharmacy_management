@@ -10,7 +10,7 @@
  "module": "Batch Tracking",
  "name": "Batch Tracking",
  "public": 1,
- "roles": [{"role": "Pharmacy Administrator"}, {"role": "Store Manager"}, {"role": "Pharmacist"}],
+ "roles": [{"role": "System Manager"}, {"role": "Pharmacy Administrator"}, {"role": "Store Manager"}, {"role": "Pharmacist"}],
  "sequence_id": 9,
  "shortcuts": [
   {"doc_view": "List", "label": "Expiry Alert", "link_to": "Expiry Alert", "type": "DocType"},

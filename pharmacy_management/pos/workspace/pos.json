@@ -10,7 +10,7 @@
  "module": "POS",
  "name": "POS",
  "public": 1,
- "roles": [{"role": "Pharmacy Administrator"}, {"role": "Pharmacist"}, {"role": "Pharmacy Cashier"}],
+ "roles": [{"role": "System Manager"}, {"role": "Pharmacy Administrator"}, {"role": "Pharmacist"}, {"role": "Pharmacy Cashier"}],
  "sequence_id": 7,
  "shortcuts": [
   {"doc_view": "List", "label": "POS Invoice Ext", "link_to": "POS Invoice Ext", "type": "DocType"},

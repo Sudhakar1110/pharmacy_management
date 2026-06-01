@@ -10,7 +10,7 @@
  "module": "Employee Ops",
  "name": "Employee Ops",
  "public": 1,
- "roles": [{"role": "Pharmacy Administrator"}, {"role": "Pharmacist"}],
+ "roles": [{"role": "System Manager"}, {"role": "Pharmacy Administrator"}, {"role": "Pharmacist"}],
  "sequence_id": 11,
  "shortcuts": [
   {"doc_view": "List", "label": "Pharmacist", "link_to": "Pharmacist", "type": "DocType"},

@@ -10,7 +10,7 @@
  "module": "Vendor Portal",
  "name": "Vendor Portal",
  "public": 1,
- "roles": [{"role": "Pharmacy Administrator"}, {"role": "Purchase Officer"}, {"role": "Store Manager"}],
+ "roles": [{"role": "System Manager"}, {"role": "Pharmacy Administrator"}, {"role": "Purchase Officer"}, {"role": "Store Manager"}],
  "sequence_id": 12,
  "shortcuts": [
   {"doc_view": "List", "label": "Purchase Request", "link_to": "Purchase Request", "type": "DocType"},

@@ -10,7 +10,7 @@
  "module": "Catalog",
  "name": "Catalog",
  "public": 1,
- "roles": [{"role": "Pharmacy Administrator"}, {"role": "Pharmacist"}, {"role": "Store Manager"}],
+ "roles": [{"role": "System Manager"}, {"role": "Pharmacy Administrator"}, {"role": "Pharmacist"}, {"role": "Store Manager"}],
  "sequence_id": 3,
  "shortcuts": [
   {"doc_view": "List", "label": "Medicine Master", "link_to": "Medicine Master", "type": "DocType"},

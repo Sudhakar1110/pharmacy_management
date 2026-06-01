@@ -10,7 +10,7 @@
  "module": "Inventory",
  "name": "Inventory",
  "public": 1,
- "roles": [{"role": "Pharmacy Administrator"}, {"role": "Store Manager"}, {"role": "Pharmacist"}],
+ "roles": [{"role": "System Manager"}, {"role": "Pharmacy Administrator"}, {"role": "Store Manager"}, {"role": "Pharmacist"}],
  "sequence_id": 4,
  "shortcuts": [
   {"doc_view": "List", "label": "Medicine Batch", "link_to": "Medicine Batch", "type": "DocType"},

@@ -10,7 +10,7 @@
  "module": "Finance",
  "name": "Finance",
  "public": 1,
- "roles": [{"role": "Pharmacy Administrator"}, {"role": "Pharmacy Auditor"}],
+ "roles": [{"role": "System Manager"}, {"role": "Pharmacy Administrator"}, {"role": "Pharmacy Auditor"}],
  "sequence_id": 13,
  "shortcuts": [
   {"label": "Daily Sales Report", "link_to": "Daily Sales Report", "type": "Report"},
