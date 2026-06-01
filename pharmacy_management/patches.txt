@@ -1,3 +1,2 @@
-# Patches for Pharmacy Management
-# Format: path.to.module.function
-# Example: pharmacy_management.setup.patch_name
+[patches]
+pharmacy_management.patches.create_workspaces.execute
