@@ -1,0 +1,12 @@
+{
+  "doctype":"DocType","name":"Medicine Category","module":"Medicine Catalog",
+  "autoname":"field:category_name","title_field":"category_name",
+  "fields":[
+    {"fieldname":"category_name","fieldtype":"Data","label":"Category Name","reqd":1},
+    {"fieldname":"parent_category","fieldtype":"Link","label":"Parent Category","options":"Medicine Category"},
+    {"fieldname":"description","fieldtype":"Small Text","label":"Description"},
+    {"fieldname":"gst_rate","fieldtype":"Select","label":"Default GST Rate","options":"0\n5\n12\n18\n28"},
+    {"fieldname":"is_active","fieldtype":"Check","label":"Is Active","default":"1"}
+  ],
+  "permissions":[{"create":1,"delete":1,"read":1,"write":1,"role":"Pharmacy Administrator"},{"read":1,"role":"Pharmacist"}]
+}

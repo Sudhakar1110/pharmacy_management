@@ -1,0 +1,14 @@
+{
+  "doctype":"DocType","name":"Drug Composition","module":"Medicine Catalog",
+  "autoname":"field:composition_name","title_field":"composition_name",
+  "fields":[
+    {"fieldname":"composition_name","fieldtype":"Data","label":"Composition Name","reqd":1},
+    {"fieldname":"active_ingredients","fieldtype":"Table","label":"Active Ingredients","options":"Drug Composition Item"},
+    {"fieldname":"therapeutic_class","fieldtype":"Data","label":"Therapeutic Class"},
+    {"fieldname":"drug_class","fieldtype":"Data","label":"Drug Class"},
+    {"fieldname":"mechanism_of_action","fieldtype":"Text","label":"Mechanism of Action"},
+    {"fieldname":"contraindications","fieldtype":"Text","label":"Contraindications"},
+    {"fieldname":"side_effects","fieldtype":"Text","label":"Side Effects"}
+  ],
+  "permissions":[{"create":1,"delete":1,"read":1,"write":1,"role":"Pharmacy Administrator"},{"read":1,"role":"Pharmacist"}]
+}

@@ -1,0 +1,36 @@
+/* Pharmacy Management System - Custom CSS */
+
+:root {
+    --pharmacy-primary: #2ecc71;
+    --pharmacy-secondary: #3498db;
+    --pharmacy-danger: #e74c3c;
+    --pharmacy-warning: #f39c12;
+}
+
+/* Expiry Alert Colors */
+.expiry-critical { color: var(--pharmacy-danger); font-weight: bold; }
+.expiry-warning { color: var(--pharmacy-warning); font-weight: bold; }
+.expiry-info { color: var(--pharmacy-secondary); }
+
+/* POS Invoice styling */
+.pos-invoice-grand-total {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--pharmacy-primary);
+}
+
+/* Prescription status badges */
+.indicator.blue { background: #3498db; }
+.indicator.orange { background: #f39c12; }
+
+/* Dashboard KPI cards */
+.pharmacy-kpi-card {
+    border-left: 4px solid var(--pharmacy-primary);
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+}
+
+/* Medicine batch table */
+.batch-near-expiry td { background-color: #fff3cd !important; }
+.batch-expired td { background-color: #f8d7da !important; }

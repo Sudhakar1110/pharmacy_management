@@ -1,0 +1,19 @@
+{
+  "doctype": "DocType", "name": "Insurance Provider", "module": "Pharmacy CRM",
+  "autoname": "field:provider_name", "title_field": "provider_name",
+  "fields": [
+    {"fieldname":"provider_name","fieldtype":"Data","label":"Provider Name","reqd":1},
+    {"fieldname":"tpa_name","fieldtype":"Data","label":"TPA Name"},
+    {"fieldname":"contact_person","fieldtype":"Data","label":"Contact Person"},
+    {"fieldname":"contact_phone","fieldtype":"Data","label":"Contact Phone"},
+    {"fieldname":"contact_email","fieldtype":"Data","label":"Contact Email"},
+    {"fieldname":"coverage_percentage","fieldtype":"Percent","label":"Coverage %","default":"80"},
+    {"fieldname":"claim_submission_days","fieldtype":"Int","label":"Claim Submission Days","default":"30"},
+    {"fieldname":"notes","fieldtype":"Text","label":"Notes"},
+    {"fieldname":"is_active","fieldtype":"Check","label":"Is Active","default":"1"}
+  ],
+  "permissions": [
+    {"create":1,"delete":1,"read":1,"write":1,"role":"Pharmacy Administrator"},
+    {"read":1,"role":"Pharmacist"}
+  ]
+}

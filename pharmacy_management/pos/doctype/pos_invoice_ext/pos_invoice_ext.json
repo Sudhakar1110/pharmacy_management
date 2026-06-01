@@ -1,0 +1,38 @@
+{
+  "doctype":"DocType","name":"POS Invoice Ext","module":"Point of Sale",
+  "autoname":"naming_series:","is_submittable":1,"title_field":"patient",
+  "fields":[
+    {"fieldname":"naming_series","fieldtype":"Select","label":"Series","options":"POS-.YYYY.-"},
+    {"fieldname":"posting_date","fieldtype":"Date","label":"Date","reqd":1,"default":"Today","in_list_view":1},
+    {"fieldname":"posting_time","fieldtype":"Time","label":"Time","default":"now"},
+    {"fieldname":"patient","fieldtype":"Link","label":"Patient","options":"Patient","in_list_view":1},
+    {"fieldname":"patient_name","fieldtype":"Data","label":"Patient Name","fetch_from":"patient.patient_name","read_only":1},
+    {"fieldname":"column_break_1","fieldtype":"Column Break"},
+    {"fieldname":"prescription","fieldtype":"Link","label":"Prescription Ref","options":"Prescription"},
+    {"fieldname":"cashier","fieldtype":"Link","label":"Cashier","options":"User"},
+    {"fieldname":"pos_profile","fieldtype":"Link","label":"POS Profile","options":"POS Profile"},
+    {"fieldname":"section_items","fieldtype":"Section Break","label":"Items"},
+    {"fieldname":"items","fieldtype":"Table","label":"Items","options":"POS Invoice Item Ext"},
+    {"fieldname":"section_payment","fieldtype":"Section Break","label":"Payment"},
+    {"fieldname":"discount_amount","fieldtype":"Currency","label":"Discount Amount"},
+    {"fieldname":"discount_percent","fieldtype":"Percent","label":"Discount %"},
+    {"fieldname":"loyalty_points_used","fieldtype":"Float","label":"Loyalty Points Used"},
+    {"fieldname":"loyalty_amount","fieldtype":"Currency","label":"Loyalty Amount"},
+    {"fieldname":"insurance_claim_amount","fieldtype":"Currency","label":"Insurance Claim Amount"},
+    {"fieldname":"column_break_2","fieldtype":"Column Break"},
+    {"fieldname":"subtotal","fieldtype":"Currency","label":"Subtotal","read_only":1},
+    {"fieldname":"tax_amount","fieldtype":"Currency","label":"Tax Amount","read_only":1},
+    {"fieldname":"grand_total","fieldtype":"Currency","label":"Grand Total","read_only":1},
+    {"fieldname":"paid_amount","fieldtype":"Currency","label":"Paid Amount"},
+    {"fieldname":"change_amount","fieldtype":"Currency","label":"Change","read_only":1},
+    {"fieldname":"section_payment_mode","fieldtype":"Section Break","label":"Payment Mode"},
+    {"fieldname":"payment_mode","fieldtype":"Select","label":"Payment Mode","options":"Cash\nCard\nUPI\nNetBanking\nInsurance\nLoyalty\nMixed"},
+    {"fieldname":"upi_reference","fieldtype":"Data","label":"UPI/Card Ref No"},
+    {"fieldname":"status","fieldtype":"Select","label":"Status","options":"Draft\nPaid\nReturned","in_list_view":1}
+  ],
+  "permissions":[
+    {"create":1,"delete":1,"read":1,"report":1,"submit":1,"write":1,"role":"Pharmacy Administrator"},
+    {"create":1,"read":1,"report":1,"submit":1,"write":1,"role":"Pharmacist"},
+    {"create":1,"read":1,"submit":1,"write":1,"role":"Pharmacy Cashier"}
+  ]
+}

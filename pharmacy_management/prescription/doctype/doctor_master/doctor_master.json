@@ -1,0 +1,20 @@
+{
+  "doctype":"DocType","name":"Doctor Master","module":"Prescription Management",
+  "autoname":"naming_series:","title_field":"doctor_name",
+  "fields":[
+    {"fieldname":"naming_series","fieldtype":"Select","label":"Series","options":"DOC-.YYYY.-"},
+    {"fieldname":"doctor_name","fieldtype":"Data","label":"Doctor Name","reqd":1,"in_list_view":1},
+    {"fieldname":"registration_number","fieldtype":"Data","label":"Registration Number","reqd":1},
+    {"fieldname":"specialization","fieldtype":"Data","label":"Specialization","in_list_view":1},
+    {"fieldname":"column_break_1","fieldtype":"Column Break"},
+    {"fieldname":"qualification","fieldtype":"Data","label":"Qualification"},
+    {"fieldname":"hospital","fieldtype":"Data","label":"Hospital / Clinic"},
+    {"fieldname":"mobile","fieldtype":"Data","label":"Mobile"},
+    {"fieldname":"email","fieldtype":"Data","label":"Email"},
+    {"fieldname":"is_active","fieldtype":"Check","label":"Is Active","default":"1"}
+  ],
+  "permissions":[
+    {"create":1,"delete":1,"read":1,"write":1,"role":"Pharmacy Administrator"},
+    {"create":1,"read":1,"write":1,"role":"Pharmacist"}
+  ]
+}

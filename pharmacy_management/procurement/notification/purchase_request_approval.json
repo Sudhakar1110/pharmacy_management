@@ -1,0 +1,14 @@
+{
+  "attach_print": 0,
+  "channel": "System Notification",
+  "condition": "doc.status == 'Pending Approval'",
+  "document_type": "Purchase Request",
+  "enabled": 1,
+  "event": "Value Change",
+  "value_changed": "status",
+  "message": "Purchase Request {{ doc.name }} - {{ doc.title }} requires your approval.",
+  "name": "Purchase Request Approval",
+  "recipients": [{"receiver_by_role": "Pharmacy Administrator"}],
+  "send_to_all_assignees": 0,
+  "subject": "Purchase Request Pending Approval: {{ doc.name }}"
+}

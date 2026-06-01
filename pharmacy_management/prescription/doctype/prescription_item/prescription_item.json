@@ -1,0 +1,14 @@
+{
+  "doctype":"DocType","name":"Prescription Item","module":"Prescription Management",
+  "istable":1,
+  "fields":[
+    {"fieldname":"medicine","fieldtype":"Link","label":"Medicine","options":"Medicine Master","reqd":1,"in_list_view":1},
+    {"fieldname":"medicine_name","fieldtype":"Data","label":"Medicine Name","fetch_from":"medicine.medicine_name","read_only":1,"in_list_view":1},
+    {"fieldname":"dosage","fieldtype":"Data","label":"Dosage","in_list_view":1},
+    {"fieldname":"frequency","fieldtype":"Select","label":"Frequency","options":"Once Daily\nTwice Daily\nThrice Daily\nFour Times Daily\nSOS\nAs Directed","in_list_view":1},
+    {"fieldname":"duration","fieldtype":"Data","label":"Duration","in_list_view":1},
+    {"fieldname":"qty","fieldtype":"Float","label":"Qty","in_list_view":1},
+    {"fieldname":"instructions","fieldtype":"Data","label":"Instructions"}
+  ],
+  "permissions":[]
+}

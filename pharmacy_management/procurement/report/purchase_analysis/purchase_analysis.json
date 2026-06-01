@@ -1,0 +1,5 @@
+{
+  "doctype":"Report","name":"Purchase Analysis","module":"Procurement Management",
+  "ref_doctype":"Purchase Order","report_type":"Script Report","is_standard":"Yes",
+  "roles":[{"role":"Pharmacy Administrator"},{"role":"Purchase Officer"},{"role":"Pharmacy Auditor"}]
+}

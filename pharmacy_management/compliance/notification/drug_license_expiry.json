@@ -1,0 +1,14 @@
+{
+  "attach_print": 0,
+  "channel": "Email",
+  "condition": "doc.status in ('Expiring Soon', 'Expired')",
+  "document_type": "Drug License",
+  "enabled": 1,
+  "event": "Value Change",
+  "value_changed": "status",
+  "message": "<p>Dear Admin,</p><p>Drug License <b>{{ doc.license_name }}</b> ({{ doc.license_number }}) is <b>{{ doc.status }}</b>.</p><p><b>Expiry Date:</b> {{ doc.expiry_date }}</p><p>Please renew immediately to avoid compliance issues.</p>",
+  "name": "Drug License Expiry",
+  "recipients": [{"receiver_by_role": "Pharmacy Administrator"}],
+  "send_to_all_assignees": 0,
+  "subject": "🔴 Drug License Alert: {{ doc.license_name }} - {{ doc.status }}"
+}

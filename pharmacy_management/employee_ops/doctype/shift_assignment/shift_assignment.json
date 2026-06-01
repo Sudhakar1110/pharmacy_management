@@ -1,0 +1,19 @@
+{
+  "doctype":"DocType","name":"Shift Assignment","module":"Employee Operations",
+  "autoname":"naming_series:","title_field":"pharmacist",
+  "fields":[
+    {"fieldname":"naming_series","fieldtype":"Select","label":"Series","options":"SH-.YYYY.-"},
+    {"fieldname":"pharmacist","fieldtype":"Link","label":"Pharmacist","options":"Pharmacist","reqd":1,"in_list_view":1},
+    {"fieldname":"shift_date","fieldtype":"Date","label":"Date","reqd":1,"in_list_view":1},
+    {"fieldname":"shift_type","fieldtype":"Select","label":"Shift","options":"Morning\nAfternoon\nEvening\nNight","in_list_view":1},
+    {"fieldname":"column_break_1","fieldtype":"Column Break"},
+    {"fieldname":"start_time","fieldtype":"Time","label":"Start Time"},
+    {"fieldname":"end_time","fieldtype":"Time","label":"End Time"},
+    {"fieldname":"warehouse","fieldtype":"Link","label":"Assigned Warehouse","options":"Warehouse"},
+    {"fieldname":"notes","fieldtype":"Small Text","label":"Notes"}
+  ],
+  "permissions":[
+    {"create":1,"delete":1,"read":1,"write":1,"role":"Pharmacy Administrator"},
+    {"create":1,"read":1,"write":1,"role":"Store Manager"}
+  ]
+}

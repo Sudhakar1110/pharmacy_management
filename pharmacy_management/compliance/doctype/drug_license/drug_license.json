@@ -1,0 +1,22 @@
+{
+  "doctype":"DocType","name":"Drug License","module":"Regulatory Compliance",
+  "autoname":"naming_series:","title_field":"license_name",
+  "fields":[
+    {"fieldname":"naming_series","fieldtype":"Select","label":"Series","options":"DL-.YYYY.-"},
+    {"fieldname":"license_name","fieldtype":"Data","label":"License Name","reqd":1,"in_list_view":1},
+    {"fieldname":"license_number","fieldtype":"Data","label":"License Number","reqd":1,"in_list_view":1},
+    {"fieldname":"license_type","fieldtype":"Select","label":"License Type","options":"Drug License\nNarcotic License\nGST Registration\nFSSAI\nShop Act\nOther","in_list_view":1},
+    {"fieldname":"column_break_1","fieldtype":"Column Break"},
+    {"fieldname":"issue_date","fieldtype":"Date","label":"Issue Date"},
+    {"fieldname":"expiry_date","fieldtype":"Date","label":"Expiry Date","reqd":1,"in_list_view":1},
+    {"fieldname":"issuing_authority","fieldtype":"Data","label":"Issuing Authority"},
+    {"fieldname":"status","fieldtype":"Select","label":"Status","options":"Active\nExpiring Soon\nExpired\nRenewed","in_list_view":1},
+    {"fieldname":"renewal_reminder_days","fieldtype":"Int","label":"Reminder Days Before Expiry","default":"60"},
+    {"fieldname":"document","fieldtype":"Attach","label":"License Document"},
+    {"fieldname":"notes","fieldtype":"Small Text","label":"Notes"}
+  ],
+  "permissions":[
+    {"create":1,"delete":1,"read":1,"report":1,"write":1,"role":"Pharmacy Administrator"},
+    {"read":1,"report":1,"role":"Pharmacy Auditor"}
+  ]
+}

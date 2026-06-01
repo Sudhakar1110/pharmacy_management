@@ -1,0 +1,25 @@
+{
+  "doctype":"DocType","name":"Purchase Request","module":"Procurement Management",
+  "autoname":"naming_series:","is_submittable":1,"title_field":"title",
+  "fields":[
+    {"fieldname":"naming_series","fieldtype":"Select","label":"Series","options":"PR-.YYYY.-"},
+    {"fieldname":"title","fieldtype":"Data","label":"Title","reqd":1},
+    {"fieldname":"request_date","fieldtype":"Date","label":"Request Date","reqd":1,"default":"Today"},
+    {"fieldname":"required_by","fieldtype":"Date","label":"Required By"},
+    {"fieldname":"column_break_1","fieldtype":"Column Break"},
+    {"fieldname":"requested_by","fieldtype":"Link","label":"Requested By","options":"User"},
+    {"fieldname":"warehouse","fieldtype":"Link","label":"Warehouse","options":"Warehouse"},
+    {"fieldname":"priority","fieldtype":"Select","label":"Priority","options":"Low\nMedium\nHigh\nUrgent"},
+    {"fieldname":"status","fieldtype":"Select","label":"Status","options":"Draft\nPending Approval\nApproved\nPO Created\nCompleted\nCancelled","in_list_view":1},
+    {"fieldname":"section_items","fieldtype":"Section Break","label":"Items"},
+    {"fieldname":"items","fieldtype":"Table","label":"Items","options":"Purchase Request Item"},
+    {"fieldname":"notes","fieldtype":"Small Text","label":"Notes"},
+    {"fieldname":"approved_by","fieldtype":"Link","label":"Approved By","options":"User","read_only":1},
+    {"fieldname":"approval_date","fieldtype":"Date","label":"Approval Date","read_only":1}
+  ],
+  "permissions":[
+    {"create":1,"delete":1,"read":1,"report":1,"submit":1,"write":1,"role":"Pharmacy Administrator"},
+    {"create":1,"read":1,"report":1,"submit":1,"write":1,"role":"Purchase Officer"},
+    {"create":1,"read":1,"submit":1,"write":1,"role":"Store Manager"}
+  ]
+}

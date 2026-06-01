@@ -1,0 +1,28 @@
+{
+  "doctype":"DocType","name":"Prescription","module":"Prescription Management",
+  "autoname":"naming_series:","is_submittable":1,"title_field":"patient",
+  "track_changes":1,
+  "fields":[
+    {"fieldname":"naming_series","fieldtype":"Select","label":"Series","options":"RX-.YYYY.-"},
+    {"fieldname":"patient","fieldtype":"Link","label":"Patient","options":"Patient","reqd":1,"in_list_view":1},
+    {"fieldname":"patient_name","fieldtype":"Data","label":"Patient Name","fetch_from":"patient.patient_name","read_only":1},
+    {"fieldname":"doctor","fieldtype":"Link","label":"Doctor","options":"Doctor Master"},
+    {"fieldname":"column_break_1","fieldtype":"Column Break"},
+    {"fieldname":"prescription_date","fieldtype":"Date","label":"Prescription Date","reqd":1,"default":"Today","in_list_view":1},
+    {"fieldname":"valid_till","fieldtype":"Date","label":"Valid Till"},
+    {"fieldname":"status","fieldtype":"Select","label":"Status","options":"Uploaded\nVerification\nDispensing\nCompleted\nCancelled","in_list_view":1,"default":"Uploaded"},
+    {"fieldname":"section_rx","fieldtype":"Section Break","label":"Prescription Items"},
+    {"fieldname":"medicines","fieldtype":"Table","label":"Medicines","options":"Prescription Item"},
+    {"fieldname":"section_image","fieldtype":"Section Break","label":"Prescription Image"},
+    {"fieldname":"prescription_image","fieldtype":"Attach Image","label":"Prescription Image"},
+    {"fieldname":"notes","fieldtype":"Small Text","label":"Pharmacist Notes"},
+    {"fieldname":"verified_by","fieldtype":"Link","label":"Verified By","options":"User","read_only":1},
+    {"fieldname":"dispensed_by","fieldtype":"Link","label":"Dispensed By","options":"User","read_only":1},
+    {"fieldname":"sales_invoice","fieldtype":"Link","label":"Sales Invoice","options":"Sales Invoice","read_only":1}
+  ],
+  "permissions":[
+    {"create":1,"delete":1,"read":1,"report":1,"submit":1,"write":1,"role":"Pharmacy Administrator"},
+    {"create":1,"read":1,"report":1,"submit":1,"write":1,"role":"Pharmacist"},
+    {"read":1,"report":1,"role":"Pharmacy Cashier"}
+  ]
+}

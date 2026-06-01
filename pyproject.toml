@@ -1,0 +1,7 @@
+[tool.flit.metadata]
+module = "pharmacy_management"
+author = "Your Company"
+author-email = "admin@yourcompany.com"
+home-page = "https://github.com/yourorg/pharmacy_management"
+description-file = "README.md"
+requires = ["frappe", "erpnext"]

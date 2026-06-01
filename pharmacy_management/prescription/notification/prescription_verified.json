@@ -1,0 +1,14 @@
+{
+  "attach_print": 0,
+  "channel": "System Notification",
+  "condition": "doc.status == 'Dispensing'",
+  "document_type": "Prescription",
+  "enabled": 1,
+  "event": "Value Change",
+  "value_changed": "status",
+  "message": "Prescription {{ doc.name }} for patient {{ doc.patient_name }} is ready for dispensing.",
+  "name": "Prescription Ready for Dispensing",
+  "recipients": [{"receiver_by_role": "Pharmacist"}, {"receiver_by_role": "Pharmacy Cashier"}],
+  "send_to_all_assignees": 0,
+  "subject": "Rx Ready: {{ doc.patient_name }}"
+}

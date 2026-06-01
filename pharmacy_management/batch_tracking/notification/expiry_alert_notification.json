@@ -1,0 +1,13 @@
+{
+  "attach_print": 0,
+  "channel": "Email",
+  "condition": "doc.days_to_expiry <= 90 and doc.is_resolved == 0",
+  "document_type": "Expiry Alert",
+  "enabled": 1,
+  "event": "Days Before",
+  "message": "<p>Dear Pharmacy Team,</p><p>The following medicine batch is expiring soon:</p><ul><li><b>Medicine:</b> {{ doc.medicine_name }}</li><li><b>Batch No:</b> {{ doc.batch_no }}</li><li><b>Expiry Date:</b> {{ doc.expiry_date }}</li><li><b>Days to Expiry:</b> {{ doc.days_to_expiry }}</li><li><b>Qty in Stock:</b> {{ doc.qty }}</li><li><b>Alert Level:</b> {{ doc.alert_level }}</li></ul><p>Please take appropriate action.</p>",
+  "name": "Expiry Alert Notification",
+  "recipients": [{"receiver_by_role": "Store Manager"}, {"receiver_by_role": "Pharmacy Administrator"}],
+  "send_to_all_assignees": 0,
+  "subject": "⚠️ Medicine Expiry Alert: {{ doc.medicine_name }} expires in {{ doc.days_to_expiry }} days"
+}

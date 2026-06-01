@@ -1,0 +1,17 @@
+{
+  "add_total_row": 1,
+  "columns": [],
+  "doctype": "Report",
+  "filters": [],
+  "is_standard": "Yes",
+  "module": "Point of Sale",
+  "name": "Daily Sales Report",
+  "ref_doctype": "POS Invoice Ext",
+  "report_name": "Daily Sales Report",
+  "report_type": "Script Report",
+  "roles": [
+    {"role": "Pharmacy Administrator"},
+    {"role": "Store Manager"},
+    {"role": "Pharmacy Auditor"}
+  ]
+}

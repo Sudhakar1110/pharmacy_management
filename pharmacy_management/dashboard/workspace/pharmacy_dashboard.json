@@ -1,0 +1,36 @@
+{
+  "charts": [
+    {
+      "chart_name": "Daily Sales",
+      "col": 6
+    },
+    {
+      "chart_name": "Category Sales",
+      "col": 6
+    }
+  ],
+  "content": "[{\"type\":\"header\",\"data\":{\"text\":\"Pharmacy Management\",\"level\":2}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Patient\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Medicine Master\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Prescription\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"POS Invoice Ext\",\"col\":3}}]",
+  "doctype": "Workspace",
+  "extends_another_page": 0,
+  "hide_custom": 0,
+  "icon": "healthcare",
+  "is_hidden": 0,
+  "label": "Pharmacy",
+  "module": "Pharmacy Management",
+  "name": "Pharmacy",
+  "public": 1,
+  "roles": [],
+  "sequence_id": 1,
+  "shortcuts": [
+    {"doc_view":"List","label":"Patients","link_to":"Patient","type":"DocType"},
+    {"doc_view":"List","label":"Medicines","link_to":"Medicine Master","type":"DocType"},
+    {"doc_view":"List","label":"Prescriptions","link_to":"Prescription","type":"DocType"},
+    {"doc_view":"List","label":"POS Billing","link_to":"POS Invoice Ext","type":"DocType"},
+    {"doc_view":"List","label":"Medicine Batches","link_to":"Medicine Batch","type":"DocType"},
+    {"doc_view":"List","label":"Expiry Alerts","link_to":"Expiry Alert","type":"DocType"},
+    {"doc_view":"List","label":"Insurance Claims","link_to":"Insurance Claim","type":"DocType"},
+    {"doc_view":"List","label":"Purchase Requests","link_to":"Purchase Request","type":"DocType"},
+    {"label":"Daily Sales Report","link_to":"Daily Sales Report","type":"Report"},
+    {"label":"Near Expiry Stock","link_to":"Near Expiry Stock","type":"Report"}
+  ]
+}

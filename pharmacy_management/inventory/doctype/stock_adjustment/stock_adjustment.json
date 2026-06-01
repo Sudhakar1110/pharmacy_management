@@ -1,0 +1,23 @@
+{
+  "doctype":"DocType","name":"Stock Adjustment","module":"Inventory Control",
+  "autoname":"naming_series:","is_submittable":1,
+  "fields":[
+    {"fieldname":"naming_series","fieldtype":"Select","label":"Series","options":"SA-.YYYY.-"},
+    {"fieldname":"posting_date","fieldtype":"Date","label":"Posting Date","reqd":1,"default":"Today"},
+    {"fieldname":"adjustment_type","fieldtype":"Select","label":"Type","options":"Write Off\nDamage\nExpiry Disposal\nCount Adjustment","reqd":1},
+    {"fieldname":"warehouse","fieldtype":"Link","label":"Warehouse","options":"Warehouse","reqd":1},
+    {"fieldname":"column_break_1","fieldtype":"Column Break"},
+    {"fieldname":"reason","fieldtype":"Small Text","label":"Reason","reqd":1},
+    {"fieldname":"approved_by","fieldtype":"Link","label":"Approved By","options":"User"},
+    {"fieldname":"section_items","fieldtype":"Section Break","label":"Items"},
+    {"fieldname":"items","fieldtype":"Table","label":"Items","options":"Stock Adjustment Item"},
+    {"fieldname":"section_totals","fieldtype":"Section Break","label":"Totals"},
+    {"fieldname":"total_qty","fieldtype":"Float","label":"Total Qty","read_only":1},
+    {"fieldname":"total_value","fieldtype":"Currency","label":"Total Value","read_only":1}
+  ],
+  "permissions":[
+    {"create":1,"delete":1,"read":1,"report":1,"submit":1,"write":1,"role":"Pharmacy Administrator"},
+    {"create":1,"read":1,"report":1,"submit":1,"write":1,"role":"Store Manager"},
+    {"read":1,"report":1,"role":"Pharmacy Auditor"}
+  ]
+}
