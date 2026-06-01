@@ -1,4 +1,4 @@
-CRM
+Pharmacy CRM
 Catalog
 Inventory
 Procurement
