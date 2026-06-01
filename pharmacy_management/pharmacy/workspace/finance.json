@@ -7,7 +7,7 @@
  "icon": "line-chart",
  "is_hidden": 0,
  "label": "Finance",
- "module": "Finance",
+ "module": "Pharmacy",
  "name": "Finance",
  "public": 1,
  "roles": [{"role": "System Manager"}, {"role": "Pharmacy Administrator"}, {"role": "Pharmacy Auditor"}],

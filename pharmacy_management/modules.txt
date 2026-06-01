@@ -1,3 +1,4 @@
+Pharmacy
 Pharmacy CRM
 Catalog
 Inventory

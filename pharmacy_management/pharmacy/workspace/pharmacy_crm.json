@@ -7,7 +7,7 @@
  "icon": "users",
  "is_hidden": 0,
  "label": "Pharmacy CRM",
- "module": "Pharmacy CRM",
+ "module": "Pharmacy",
  "name": "Pharmacy CRM",
  "public": 1,
  "roles": [{"role": "System Manager"}, {"role": "Pharmacy Administrator"}, {"role": "Pharmacist"}, {"role": "Pharmacy Auditor"}],

@@ -7,7 +7,7 @@
  "icon": "shopping-cart",
  "is_hidden": 0,
  "label": "Procurement",
- "module": "Procurement",
+ "module": "Pharmacy",
  "name": "Procurement",
  "public": 1,
  "roles": [{"role": "System Manager"}, {"role": "Pharmacy Administrator"}, {"role": "Purchase Officer"}, {"role": "Store Manager"}],

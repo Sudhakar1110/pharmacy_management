@@ -7,7 +7,7 @@
  "icon": "shield",
  "is_hidden": 0,
  "label": "Insurance",
- "module": "Insurance",
+ "module": "Pharmacy",
  "name": "Insurance",
  "public": 1,
  "roles": [{"role": "System Manager"}, {"role": "Pharmacy Administrator"}, {"role": "Pharmacy Auditor"}],

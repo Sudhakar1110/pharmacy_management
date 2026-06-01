@@ -7,7 +7,7 @@
  "icon": "bell",
  "is_hidden": 0,
  "label": "Batch Tracking",
- "module": "Batch Tracking",
+ "module": "Pharmacy",
  "name": "Batch Tracking",
  "public": 1,
  "roles": [{"role": "System Manager"}, {"role": "Pharmacy Administrator"}, {"role": "Store Manager"}, {"role": "Pharmacist"}],
