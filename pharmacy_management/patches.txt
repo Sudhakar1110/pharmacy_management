@@ -1,0 +1,2 @@
+[post_model_sync]
+pharmacy_management.patches.create_pharmacy_workspace
