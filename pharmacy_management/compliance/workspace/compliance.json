@@ -1,0 +1,23 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"comp-quick\",\"type\":\"section\",\"data\":{\"label\":\"Quick Actions\",\"col\":12}},{\"id\":\"shortcut-license\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drug License\",\"col\":6}},{\"id\":\"shortcut-audit\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Audit Log\",\"col\":6}},{\"id\":\"section-comp\",\"type\":\"section\",\"data\":{\"label\":\"Compliance & Regulatory\",\"col\":12}},{\"id\":\"card-licenses\",\"type\":\"card\",\"data\":{\"card_name\":\"Licenses\",\"col\":6,\"links\":[{\"type\":\"link\",\"label\":\"Drug License\",\"link_to\":\"Drug License\",\"link_type\":\"DocType\"}]}},{\"id\":\"card-audit\",\"type\":\"card\",\"data\":{\"card_name\":\"Audit\",\"col\":6,\"links\":[{\"type\":\"link\",\"label\":\"Audit Log\",\"link_to\":\"Audit Log\",\"link_type\":\"DocType\"}]}}]",
+ "doctype": "Workspace",
+ "extends_another_page": 0,
+ "hide_custom": 0,
+ "icon": "check-circle",
+ "is_hidden": 0,
+ "label": "Compliance",
+ "module": "Pharmacy Management",
+ "name": "Compliance",
+ "public": 1,
+ "roles": [{"role": "Pharmacy Administrator"}, {"role": "Pharmacy Auditor"}],
+ "sequence_id": 10,
+ "shortcuts": [
+  {"doc_view": "List", "label": "Drug License", "link_to": "Drug License", "type": "DocType"},
+  {"doc_view": "List", "label": "Audit Log", "link_to": "Audit Log", "type": "DocType"}
+ ],
+ "links": [
+  {"dependencies": "", "hidden": 0, "is_query_report": 0, "label": "Drug License", "link_count": 0, "link_to": "Drug License", "link_type": "DocType", "onboard": 1, "type": "Link"},
+  {"dependencies": "", "hidden": 0, "is_query_report": 0, "label": "Audit Log", "link_count": 0, "link_to": "Audit Log", "link_type": "DocType", "onboard": 0, "type": "Link"}
+ ]
+}

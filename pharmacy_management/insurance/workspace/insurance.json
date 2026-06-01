@@ -1,0 +1,21 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"ins-quick\",\"type\":\"section\",\"data\":{\"label\":\"Quick Actions\",\"col\":12}},{\"id\":\"shortcut-claim\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Insurance Claim\",\"col\":12}},{\"id\":\"section-ins\",\"type\":\"section\",\"data\":{\"label\":\"Insurance Management\",\"col\":12}},{\"id\":\"card-claims\",\"type\":\"card\",\"data\":{\"card_name\":\"Claims\",\"col\":12,\"links\":[{\"type\":\"link\",\"label\":\"Insurance Claim\",\"link_to\":\"Insurance Claim\",\"link_type\":\"DocType\"}]}}]",
+ "doctype": "Workspace",
+ "extends_another_page": 0,
+ "hide_custom": 0,
+ "icon": "shield",
+ "is_hidden": 0,
+ "label": "Insurance",
+ "module": "Pharmacy Management",
+ "name": "Insurance",
+ "public": 1,
+ "roles": [{"role": "Pharmacy Administrator"}, {"role": "Pharmacy Auditor"}],
+ "sequence_id": 8,
+ "shortcuts": [
+  {"doc_view": "List", "label": "Insurance Claim", "link_to": "Insurance Claim", "type": "DocType"}
+ ],
+ "links": [
+  {"dependencies": "", "hidden": 0, "is_query_report": 0, "label": "Insurance Claim", "link_count": 0, "link_to": "Insurance Claim", "link_type": "DocType", "onboard": 1, "type": "Link"}
+ ]
+}

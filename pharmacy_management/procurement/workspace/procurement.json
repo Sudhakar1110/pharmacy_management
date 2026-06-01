@@ -1,0 +1,24 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"proc-quick\",\"type\":\"section\",\"data\":{\"label\":\"Quick Actions\",\"col\":12}},{\"id\":\"shortcut-pr\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Purchase Request\",\"col\":6}},{\"id\":\"shortcut-analysis\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Purchase Analysis\",\"col\":6}},{\"id\":\"section-proc\",\"type\":\"section\",\"data\":{\"label\":\"Procurement\",\"col\":12}},{\"id\":\"card-requests\",\"type\":\"card\",\"data\":{\"card_name\":\"Purchase Requests\",\"col\":12,\"links\":[{\"type\":\"link\",\"label\":\"Purchase Request\",\"link_to\":\"Purchase Request\",\"link_type\":\"DocType\"},{\"type\":\"link\",\"label\":\"Purchase Request Item\",\"link_to\":\"Purchase Request Item\",\"link_type\":\"DocType\"},{\"type\":\"link\",\"label\":\"Purchase Analysis\",\"link_to\":\"Purchase Analysis\",\"link_type\":\"Report\"}]}}]",
+ "doctype": "Workspace",
+ "extends_another_page": 0,
+ "hide_custom": 0,
+ "icon": "shopping-cart",
+ "is_hidden": 0,
+ "label": "Procurement",
+ "module": "Pharmacy Management",
+ "name": "Procurement",
+ "public": 1,
+ "roles": [{"role": "Pharmacy Administrator"}, {"role": "Purchase Officer"}, {"role": "Store Manager"}],
+ "sequence_id": 5,
+ "shortcuts": [
+  {"doc_view": "List", "label": "Purchase Request", "link_to": "Purchase Request", "type": "DocType"},
+  {"label": "Purchase Analysis", "link_to": "Purchase Analysis", "type": "Report"}
+ ],
+ "links": [
+  {"dependencies": "", "hidden": 0, "is_query_report": 0, "label": "Purchase Request", "link_count": 0, "link_to": "Purchase Request", "link_type": "DocType", "onboard": 1, "type": "Link"},
+  {"dependencies": "", "hidden": 0, "is_query_report": 0, "label": "Purchase Request Item", "link_count": 0, "link_to": "Purchase Request Item", "link_type": "DocType", "onboard": 0, "type": "Link"},
+  {"dependencies": "", "hidden": 0, "is_query_report": 0, "label": "Purchase Analysis", "link_count": 0, "link_to": "Purchase Analysis", "link_type": "Report", "onboard": 0, "type": "Link"}
+ ]
+}

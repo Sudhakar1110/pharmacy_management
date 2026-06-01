@@ -1,0 +1,27 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"crm-quick\",\"type\":\"section\",\"data\":{\"label\":\"Quick Actions\",\"col\":12}},{\"id\":\"shortcut-patient\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Patient\",\"col\":4}},{\"id\":\"shortcut-loyalty\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Loyalty Program\",\"col\":4}},{\"id\":\"shortcut-insurance\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Insurance Provider\",\"col\":4}},{\"id\":\"section-main\",\"type\":\"section\",\"data\":{\"label\":\"Patient Management\",\"col\":12}},{\"id\":\"card-patient\",\"type\":\"card\",\"data\":{\"card_name\":\"Patients\",\"col\":6,\"links\":[{\"type\":\"link\",\"label\":\"Patient\",\"link_to\":\"Patient\",\"link_type\":\"DocType\"},{\"type\":\"link\",\"label\":\"Loyalty Program\",\"link_to\":\"Loyalty Program\",\"link_type\":\"DocType\"}]}},{\"id\":\"card-insurance\",\"type\":\"card\",\"data\":{\"card_name\":\"Insurance\",\"col\":6,\"links\":[{\"type\":\"link\",\"label\":\"Insurance Provider\",\"link_to\":\"Insurance Provider\",\"link_type\":\"DocType\"},{\"type\":\"link\",\"label\":\"Insurance Claim\",\"link_to\":\"Insurance Claim\",\"link_type\":\"DocType\"}]}}]",
+ "doctype": "Workspace",
+ "extends_another_page": 0,
+ "hide_custom": 0,
+ "icon": "users",
+ "is_hidden": 0,
+ "label": "Pharmacy CRM",
+ "module": "Pharmacy Management",
+ "name": "Pharmacy CRM",
+ "public": 1,
+ "roles": [{"role": "Pharmacy Administrator"}, {"role": "Pharmacist"}, {"role": "Pharmacy Auditor"}],
+ "sequence_id": 2,
+ "shortcuts": [
+  {"doc_view": "List", "label": "Patient", "link_to": "Patient", "type": "DocType"},
+  {"doc_view": "List", "label": "Loyalty Program", "link_to": "Loyalty Program", "type": "DocType"},
+  {"doc_view": "List", "label": "Insurance Provider", "link_to": "Insurance Provider", "type": "DocType"},
+  {"doc_view": "List", "label": "Insurance Claims", "link_to": "Insurance Claim", "type": "DocType"}
+ ],
+ "links": [
+  {"dependencies": "", "hidden": 0, "is_query_report": 0, "label": "Patient", "link_count": 0, "link_to": "Patient", "link_type": "DocType", "onboard": 0, "type": "Link"},
+  {"dependencies": "", "hidden": 0, "is_query_report": 0, "label": "Loyalty Program", "link_count": 0, "link_to": "Loyalty Program", "link_type": "DocType", "onboard": 0, "type": "Link"},
+  {"dependencies": "", "hidden": 0, "is_query_report": 0, "label": "Insurance Provider", "link_count": 0, "link_to": "Insurance Provider", "link_type": "DocType", "onboard": 0, "type": "Link"},
+  {"dependencies": "", "hidden": 0, "is_query_report": 0, "label": "Insurance Claim", "link_count": 0, "link_to": "Insurance Claim", "link_type": "DocType", "onboard": 0, "type": "Link"}
+ ]
+}
