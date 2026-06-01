@@ -66,14 +66,9 @@ def execute():
 		{"label": "Purchase Request",  "link_to": "Purchase Request", "type": "DocType", "doc_view": "List"},
 	]
 
+	# Only use built-in roles that always exist in every Frappe site
 	roles = [
 		{"role": "System Manager"},
-		{"role": "Pharmacy Administrator"},
-		{"role": "Pharmacist"},
-		{"role": "Store Manager"},
-		{"role": "Purchase Officer"},
-		{"role": "Pharmacy Cashier"},
-		{"role": "Pharmacy Auditor"},
 	]
 
 	# content – JSON array of card / section / shortcut widgets  ----------

@@ -39,13 +39,7 @@
  "owner": "Administrator",
  "public": 1,
  "roles": [
-  {"role": "System Manager"},
-  {"role": "Pharmacy Administrator"},
-  {"role": "Pharmacist"},
-  {"role": "Store Manager"},
-  {"role": "Purchase Officer"},
-  {"role": "Pharmacy Cashier"},
-  {"role": "Pharmacy Auditor"}
+  {"role": "System Manager"}
  ],
  "sequence_id": 1,
  "shortcuts": [
