@@ -1,5 +1,5 @@
 {
-  "doctype": "DocType", "name": "Loyalty Program", "module": "Pharmacy CRM",
+  "doctype": "DocType", "name": "Loyalty Program", "module": "CRM",
   "autoname": "field:program_name", "title_field": "program_name",
   "fields": [
     {"fieldname":"program_name","fieldtype":"Data","label":"Program Name","reqd":1},

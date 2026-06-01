@@ -1,5 +1,5 @@
 {
-  "doctype": "DocType", "name": "Insurance Provider", "module": "Pharmacy CRM",
+  "doctype": "DocType", "name": "Insurance Provider", "module": "CRM",
   "autoname": "field:provider_name", "title_field": "provider_name",
   "fields": [
     {"fieldname":"provider_name","fieldtype":"Data","label":"Provider Name","reqd":1},

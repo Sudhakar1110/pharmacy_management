@@ -1,5 +1,5 @@
 {
-  "doctype":"DocType","name":"Pharmacist","module":"Employee Operations",
+  "doctype":"DocType","name":"Pharmacist","module":"Employee Ops",
   "autoname":"naming_series:","title_field":"pharmacist_name",
   "fields":[
     {"fieldname":"naming_series","fieldtype":"Select","label":"Series","options":"PH-.YYYY.-"},

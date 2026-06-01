@@ -1,5 +1,5 @@
 {
-  "doctype":"DocType","name":"Shift Assignment","module":"Employee Operations",
+  "doctype":"DocType","name":"Shift Assignment","module":"Employee Ops",
   "autoname":"naming_series:","title_field":"pharmacist",
   "fields":[
     {"fieldname":"naming_series","fieldtype":"Select","label":"Series","options":"SH-.YYYY.-"},

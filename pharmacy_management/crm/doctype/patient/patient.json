@@ -47,7 +47,7 @@
   "links": [],
   "modified": "2025-01-01 00:00:00",
   "modified_by": "Administrator",
-  "module": "Pharmacy CRM",
+  "module": "CRM",
   "name": "Patient",
   "naming_rule": "By \"Naming Series\" field",
   "owner": "Administrator",

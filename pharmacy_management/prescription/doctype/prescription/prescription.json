@@ -1,5 +1,5 @@
 {
-  "doctype":"DocType","name":"Prescription","module":"Prescription Management",
+  "doctype":"DocType","name":"Prescription","module":"Prescription",
   "autoname":"naming_series:","is_submittable":1,"title_field":"patient",
   "track_changes":1,
   "fields":[

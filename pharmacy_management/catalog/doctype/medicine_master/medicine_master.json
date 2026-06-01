@@ -2,7 +2,7 @@
   "actions": [], "allow_rename": 1,
   "autoname": "naming_series:",
   "doctype": "DocType", "document_type": "Document",
-  "module": "Medicine Catalog", "name": "Medicine Master",
+  "module": "Catalog", "name": "Medicine Master",
   "title_field": "medicine_name",
   "search_fields": "medicine_name,generic_name,barcode",
   "track_changes": 1,

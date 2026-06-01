@@ -4,7 +4,7 @@
   "doctype": "Report",
   "filters": [],
   "is_standard": "Yes",
-  "module": "Point of Sale",
+  "module": "POS",
   "name": "Daily Sales Report",
   "ref_doctype": "POS Invoice Ext",
   "report_name": "Daily Sales Report",

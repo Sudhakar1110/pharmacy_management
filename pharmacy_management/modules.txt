@@ -1,13 +1,13 @@
-Pharmacy CRM
-Medicine Catalog
-Inventory Control
-Procurement Management
-Prescription Management
-Point of Sale
-Insurance Processing
+CRM
+Catalog
+Inventory
+Procurement
+Prescription
+POS
+Insurance
 Batch Tracking
 Vendor Portal
-Financial Management
-Employee Operations
-Regulatory Compliance
-Pharmacy Dashboard
+Finance
+Employee Ops
+Compliance
+Dashboard

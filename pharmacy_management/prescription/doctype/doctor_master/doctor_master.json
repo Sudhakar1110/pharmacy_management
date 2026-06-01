@@ -1,5 +1,5 @@
 {
-  "doctype":"DocType","name":"Doctor Master","module":"Prescription Management",
+  "doctype":"DocType","name":"Doctor Master","module":"Prescription",
   "autoname":"naming_series:","title_field":"doctor_name",
   "fields":[
     {"fieldname":"naming_series","fieldtype":"Select","label":"Series","options":"DOC-.YYYY.-"},

@@ -1,5 +1,5 @@
 {
-  "doctype":"DocType","name":"Audit Log","module":"Regulatory Compliance",
+  "doctype":"DocType","name":"Audit Log","module":"Compliance",
   "autoname":"naming_series:","title_field":"action",
   "fields":[
     {"fieldname":"naming_series","fieldtype":"Select","label":"Series","options":"AUD-.YYYY.-"},

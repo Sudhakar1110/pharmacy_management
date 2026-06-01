@@ -16,7 +16,7 @@
   "icon": "healthcare",
   "is_hidden": 0,
   "label": "Pharmacy",
-  "module": "Pharmacy Management",
+  "module": "Dashboard",
   "name": "Pharmacy",
   "public": 1,
   "roles": [],

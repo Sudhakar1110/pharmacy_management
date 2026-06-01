@@ -1,5 +1,5 @@
 {
-  "doctype":"DocType","name":"Drug Composition","module":"Medicine Catalog",
+  "doctype":"DocType","name":"Drug Composition","module":"Catalog",
   "autoname":"field:composition_name","title_field":"composition_name",
   "fields":[
     {"fieldname":"composition_name","fieldtype":"Data","label":"Composition Name","reqd":1},

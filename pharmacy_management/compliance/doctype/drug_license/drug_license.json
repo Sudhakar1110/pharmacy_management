@@ -1,5 +1,5 @@
 {
-  "doctype":"DocType","name":"Drug License","module":"Regulatory Compliance",
+  "doctype":"DocType","name":"Drug License","module":"Compliance",
   "autoname":"naming_series:","title_field":"license_name",
   "fields":[
     {"fieldname":"naming_series","fieldtype":"Select","label":"Series","options":"DL-.YYYY.-"},

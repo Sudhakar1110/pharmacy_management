@@ -1,5 +1,5 @@
 {
-  "doctype":"DocType","name":"Medicine Category","module":"Medicine Catalog",
+  "doctype":"DocType","name":"Medicine Category","module":"Catalog",
   "autoname":"field:category_name","title_field":"category_name",
   "fields":[
     {"fieldname":"category_name","fieldtype":"Data","label":"Category Name","reqd":1},

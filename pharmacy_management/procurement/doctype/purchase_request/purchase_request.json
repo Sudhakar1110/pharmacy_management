@@ -1,5 +1,5 @@
 {
-  "doctype":"DocType","name":"Purchase Request","module":"Procurement Management",
+  "doctype":"DocType","name":"Purchase Request","module":"Procurement",
   "autoname":"naming_series:","is_submittable":1,"title_field":"title",
   "fields":[
     {"fieldname":"naming_series","fieldtype":"Select","label":"Series","options":"PR-.YYYY.-"},
