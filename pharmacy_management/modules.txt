@@ -11,4 +11,3 @@ Finance
 Employee Ops
 Compliance
 Dashboard
-Pharmacy Management

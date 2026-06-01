@@ -7,7 +7,7 @@
  "icon": "users",
  "is_hidden": 0,
  "label": "Employee Ops",
- "module": "Pharmacy Management",
+ "module": "Employee Ops",
  "name": "Employee Ops",
  "public": 1,
  "roles": [{"role": "Pharmacy Administrator"}, {"role": "Pharmacist"}],

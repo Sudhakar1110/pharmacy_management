@@ -7,7 +7,7 @@
  "icon": "cubes",
  "is_hidden": 0,
  "label": "Inventory",
- "module": "Pharmacy Management",
+ "module": "Inventory",
  "name": "Inventory",
  "public": 1,
  "roles": [{"role": "Pharmacy Administrator"}, {"role": "Store Manager"}, {"role": "Pharmacist"}],

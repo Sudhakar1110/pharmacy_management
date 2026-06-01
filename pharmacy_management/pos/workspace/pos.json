@@ -7,7 +7,7 @@
  "icon": "money",
  "is_hidden": 0,
  "label": "POS",
- "module": "Pharmacy Management",
+ "module": "POS",
  "name": "POS",
  "public": 1,
  "roles": [{"role": "Pharmacy Administrator"}, {"role": "Pharmacist"}, {"role": "Pharmacy Cashier"}],

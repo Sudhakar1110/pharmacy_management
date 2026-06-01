@@ -7,7 +7,7 @@
  "icon": "check-circle",
  "is_hidden": 0,
  "label": "Compliance",
- "module": "Pharmacy Management",
+ "module": "Compliance",
  "name": "Compliance",
  "public": 1,
  "roles": [{"role": "Pharmacy Administrator"}, {"role": "Pharmacy Auditor"}],

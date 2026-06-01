@@ -7,7 +7,7 @@
  "icon": "file-text",
  "is_hidden": 0,
  "label": "Prescription",
- "module": "Pharmacy Management",
+ "module": "Prescription",
  "name": "Prescription",
  "public": 1,
  "roles": [{"role": "Pharmacy Administrator"}, {"role": "Pharmacist"}, {"role": "Pharmacy Auditor"}],
