@@ -18,7 +18,7 @@ app_include_js = "/assets/pharmacy_management/js/pharmacy.js"
 # Document Events
 doc_events = {
     "POS Invoice": {
-        "on_submit": "pharmacy_management.pos.doctype.pos_invoice.pos_invoice.on_submit",
+        "on_submit": "pharmacy_management.pos.doctype.pos_invoice_ext.pos_invoice_ext.on_submit",
     },
     "Purchase Order": {
         "on_submit": "pharmacy_management.procurement.doctype.purchase_order_ext.purchase_order_ext.on_submit",
@@ -27,7 +27,7 @@ doc_events = {
         "on_submit": "pharmacy_management.prescription.doctype.prescription.prescription.on_submit",
     },
     "Medicine Batch": {
-        "before_save": "pharmacy_management.batch_tracking.doctype.medicine_batch.medicine_batch.check_expiry",
+        "before_save": "pharmacy_management.inventory.doctype.medicine_batch.medicine_batch.check_expiry",
     },
 }
 
