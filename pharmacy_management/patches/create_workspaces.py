@@ -1,10 +1,21 @@
 import frappe
 
 
+def clear_workspace_cache():
+    """Force clear the bootinfo cache so workspaces appear immediately.
+    The Workspace controller's on_update() normally clears this, but during
+    patch execution disable_saving_as_public() returns True and on_update
+    returns early — so we must clear it manually.
+    """
+    frappe.cache.delete_key("bootinfo")
+    frappe.clear_cache()
+
+
 WORKSPACES = [
     {
         "name": "Pharmacy",
         "label": "Pharmacy",
+        "title": "Pharmacy",
         "icon": "healthcare",
         "module": "Dashboard",
         "sequence_id": 1,
@@ -30,6 +41,7 @@ WORKSPACES = [
     {
         "name": "Pharmacy CRM",
         "label": "Pharmacy CRM",
+        "title": "Pharmacy CRM",
         "icon": "users",
         "module": "Dashboard",
         "sequence_id": 2,
@@ -45,6 +57,7 @@ WORKSPACES = [
     {
         "name": "Catalog",
         "label": "Catalog",
+        "title": "Catalog",
         "icon": "clipboard",
         "module": "Dashboard",
         "sequence_id": 3,
@@ -60,6 +73,7 @@ WORKSPACES = [
     {
         "name": "Inventory",
         "label": "Inventory",
+        "title": "Inventory",
         "icon": "cubes",
         "module": "Dashboard",
         "sequence_id": 4,
@@ -75,6 +89,7 @@ WORKSPACES = [
     {
         "name": "Procurement",
         "label": "Procurement",
+        "title": "Procurement",
         "icon": "shopping-cart",
         "module": "Dashboard",
         "sequence_id": 5,
@@ -88,6 +103,7 @@ WORKSPACES = [
     {
         "name": "Prescription",
         "label": "Prescription",
+        "title": "Prescription",
         "icon": "file-text",
         "module": "Dashboard",
         "sequence_id": 6,
@@ -101,6 +117,7 @@ WORKSPACES = [
     {
         "name": "POS",
         "label": "POS",
+        "title": "POS",
         "icon": "money",
         "module": "Dashboard",
         "sequence_id": 7,
@@ -114,6 +131,7 @@ WORKSPACES = [
     {
         "name": "Insurance",
         "label": "Insurance",
+        "title": "Insurance",
         "icon": "shield",
         "module": "Dashboard",
         "sequence_id": 8,
@@ -126,6 +144,7 @@ WORKSPACES = [
     {
         "name": "Batch Tracking",
         "label": "Batch Tracking",
+        "title": "Batch Tracking",
         "icon": "bell",
         "module": "Dashboard",
         "sequence_id": 9,
@@ -139,6 +158,7 @@ WORKSPACES = [
     {
         "name": "Compliance",
         "label": "Compliance",
+        "title": "Compliance",
         "icon": "check-circle",
         "module": "Dashboard",
         "sequence_id": 10,
@@ -152,6 +172,7 @@ WORKSPACES = [
     {
         "name": "Employee Ops",
         "label": "Employee Ops",
+        "title": "Employee Ops",
         "icon": "user-md",
         "module": "Dashboard",
         "sequence_id": 11,
@@ -165,6 +186,7 @@ WORKSPACES = [
     {
         "name": "Vendor Portal",
         "label": "Vendor Portal",
+        "title": "Vendor Portal",
         "icon": "truck",
         "module": "Dashboard",
         "sequence_id": 12,
@@ -178,6 +200,7 @@ WORKSPACES = [
     {
         "name": "Finance",
         "label": "Finance",
+        "title": "Finance",
         "icon": "line-chart",
         "module": "Dashboard",
         "sequence_id": 13,
@@ -294,6 +317,7 @@ def execute():
             "icon": ws["icon"],
             "is_hidden": 0,
             "label": ws["label"],
+            "title": ws.get("title", ws["label"]),
             "module": ws["module"],
             "name": name,
             "public": 1,
@@ -305,5 +329,9 @@ def execute():
         doc.flags.ignore_permissions = True
         doc.flags.ignore_mandatory = True
         doc.flags.ignore_links = True
+        doc.flags.ignore_validate = True
         doc.insert()
         print(f"Created workspace: {name}")
+
+    clear_workspace_cache()
+    print("Cache cleared — workspaces should now be visible.")
