@@ -8,15 +8,6 @@ def get_context(context):
     context.title = "Shop Medicines"
     context.page = "shop"
     
-    # Get path for medicine detail
-    path = frappe.local.request.path
-    parts = path.strip('/').split('/')
-    
-    if len(parts) >= 2 and parts[1] != '' and parts[1] != 'shop':
-        # This is a medicine detail page
-        medicine_name = parts[1]
-        return get_medicine_detail(context, medicine_name)
-    
     # Get categories for filter
     try:
         context.categories = frappe.get_all(
@@ -25,7 +16,6 @@ def get_context(context):
             fields=["name", "category_name"],
             order_by="category_name asc",
         )
-        # Get medicine count
         for cat in context.categories:
             cat.medicine_count = frappe.db.count("Medicine Master", {"category": cat.name, "is_active": 1})
     except Exception:
@@ -53,55 +43,8 @@ def get_context(context):
     except Exception:
         context.schedules = []
     
-    # Check for query param
     context.selected_category = frappe.form_dict.get("category", "")
-    
     context.no_sidebar = True
     context.no_breadcrumbs = True
     
     return context
-
-
-def get_medicine_detail(context, medicine_name):
-    """Render medicine detail page."""
-    from pharmacy_management.api.medicine import get_medicine_details as get_details
-    
-    try:
-        result = get_details(medicine_name)
-        context.medicine = result["medicine"]
-        context.stock = result["stock"]
-        context.in_stock = result["in_stock"]
-        context.batches = result["batches"]
-        context.related_medicines = result["related_medicines"]
-        context.manufacturer = result["manufacturer"]
-        
-        # Calculate discount
-        med = context.medicine
-        if med.mrp and med.selling_rate and med.mrp > med.selling_rate:
-            context.discount = round((1 - med.selling_rate / med.mrp) * 100, 1)
-        else:
-            context.discount = 0
-        
-        # Get composition
-        if med.composition:
-            try:
-                context.composition = frappe.get_doc("Drug Composition", med.composition)
-            except Exception:
-                context.composition = None
-        else:
-            context.composition = None
-        
-        # Check wishlist
-        from pharmacy_management.api.wishlist import is_in_wishlist
-        context.in_wishlist = is_in_wishlist(medicine_name)["in_wishlist"]
-        
-        context.title = f"{med.medicine_name} - Buy Online"
-        context.page = "medicine_detail"
-        context.template = "templates/pages/medicine_detail.html"
-        context.no_sidebar = True
-        context.no_breadcrumbs = True
-        
-        return context
-    except Exception as e:
-        frappe.local.flags.redirect_location = "/shop"
-        raise frappe.Redirect

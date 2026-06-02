@@ -16,9 +16,9 @@ app_include_css = "/assets/pharmacy_management/css/pharmacy.css"
 app_include_js = "/assets/pharmacy_management/js/pharmacy.js"
 
 # Website Routes (Frappe www)
-# /shop/<subpath> routes to shop.py for medicine detail pages
+# /shop/<name> routes to medicine detail page
 website_route_rules = [
-    {"from_route": "/shop/<path:subpath>", "to_route": "shop"},
+    ("/shop/<name>", "medicine"),
 ]
 
 # Website page titles
