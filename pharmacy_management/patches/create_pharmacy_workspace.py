@@ -39,14 +39,11 @@ def execute():
 		{"label": "Medicine Category",      "link_to": "Medicine Category",      "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
 		{"label": "Drug Manufacturer",      "link_to": "Drug Manufacturer",      "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
 		{"label": "Drug Composition",       "link_to": "Drug Composition",       "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Drug Composition Item",  "link_to": "Drug Composition Item",  "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
 		# Inventory group
 		{"label": "Inventory",             "type": "Card Break", "hidden": 0, "is_query_report": 0, "onboard": 0},
 		{"label": "Medicine Batch",         "link_to": "Medicine Batch",         "link_type": "DocType", "type": "Link", "onboard": 1, "is_query_report": 0, "hidden": 0, "dependencies": ""},
 		{"label": "Stock Adjustment",       "link_to": "Stock Adjustment",       "link_type": "DocType", "type": "Link", "onboard": 1, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Stock Adjustment Item",  "link_to": "Stock Adjustment Item",  "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
 		{"label": "Stock Transfer",         "link_to": "Stock Transfer",         "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Stock Transfer Item",    "link_to": "Stock Transfer Item",    "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
 		# Batch Tracking group
 		{"label": "Batch Tracking",        "type": "Card Break", "hidden": 0, "is_query_report": 0, "onboard": 0},
 		{"label": "Expiry Alert",           "link_to": "Expiry Alert",           "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
@@ -61,7 +58,6 @@ def execute():
 		# Point of Sale group
 		{"label": "Point of Sale",         "type": "Card Break", "hidden": 0, "is_query_report": 0, "onboard": 0},
 		{"label": "POS Invoice Ext",        "link_to": "POS Invoice Ext",        "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "POS Invoice Item Ext",   "link_to": "POS Invoice Item Ext",   "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
 		# Compliance group
 		{"label": "Compliance",            "type": "Card Break", "hidden": 0, "is_query_report": 0, "onboard": 0},
 		{"label": "Drug License",           "link_to": "Drug License",           "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
