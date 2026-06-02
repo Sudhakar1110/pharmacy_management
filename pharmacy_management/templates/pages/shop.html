@@ -226,6 +226,10 @@ function loadMedicines() {
         limit: 12
     }, function(res) {
         const data = res.message;
+        if (!data) {
+            $('#medicineGrid').html('<div class="col-12 text-center py-5"><div class="alert alert-danger">Failed to load medicines. Please try again.</div></div>');
+            return;
+        }
         $('#resultCount').text(`Showing ${data.medicines.length} of ${data.total} medicines`);
         
         let html = '';
@@ -322,6 +326,13 @@ function loadMedicines() {
 
         $('#medicineGrid').html(html);
         renderPagination(data.page, data.pages);
+    }).fail(function(xhr) {
+        let errMsg = 'Failed to load medicines. Please refresh and try again.';
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+            errMsg = xhr.responseJSON.message;
+        }
+        $('#medicineGrid').html('<div class="col-12 text-center py-5"><div class="alert alert-danger">' + errMsg + '</div></div>');
+        console.error('Search medicines error:', xhr.responseText);
     });
 }
 

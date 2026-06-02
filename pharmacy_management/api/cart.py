@@ -56,7 +56,7 @@ def merge_guest_cart_to_user():
     frappe.cache().delete(guest_key)
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def add_to_cart(medicine, qty=1):
     """Add a medicine to cart."""
     qty = int(qty)
@@ -107,7 +107,7 @@ def add_to_cart(medicine, qty=1):
     return {"success": True, "cart": cart, "message": _("Added to cart")}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def update_cart(medicine, qty):
     """Update quantity of a cart item."""
     qty = int(qty)
@@ -131,7 +131,7 @@ def update_cart(medicine, qty):
     return {"success": True, "cart": cart}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def remove_cart_item(medicine):
     """Remove item from cart."""
     cart = get_cart_data()
@@ -211,7 +211,7 @@ def get_cart():
     return result
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def clear_cart():
     """Clear entire cart."""
     cart_key = get_cart_key()
@@ -219,7 +219,7 @@ def clear_cart():
     return {"success": True, "message": _("Cart cleared")}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def apply_coupon(coupon_code):
     """Apply a coupon code to the cart."""
     if not coupon_code:
@@ -264,7 +264,7 @@ def apply_coupon(coupon_code):
     return {"success": True, "discount": discount, "message": _("Coupon applied successfully!")}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def remove_coupon():
     """Remove applied coupon."""
     cart = get_cart_data()
@@ -274,7 +274,7 @@ def remove_coupon():
     return {"success": True, "message": _("Coupon removed")}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_cart_count():
     """Get number of items in cart (for badge)."""
     cart = get_cart_data()

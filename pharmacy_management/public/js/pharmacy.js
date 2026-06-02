@@ -4,8 +4,10 @@
 // ============================================================
 
 // ============================================================
-// BACKEND: Frappe Form Scripts
+// BACKEND: Frappe Form Scripts (only runs inside Frappe Desk)
 // ============================================================
+
+if (typeof frappe !== 'undefined' && frappe.ui) {
 
 // --- POS Invoice Ext ---
 frappe.ui.form.on('POS Invoice Ext', {
@@ -96,15 +98,15 @@ frappe.listview_settings['Prescription'] = {
     }
 };
 
+} // end frappe guard
+
 // ============================================================
 // FRONTEND: E-Commerce Website (Bootstrap + jQuery)
 // ============================================================
 
 $(document).ready(function() {
     // Auto-fetch cart badge on all pages
-    if (typeof updateCartBadge === 'undefined') {
-        updateCartBadge();
-    }
+    updateCartBadge();
 });
 
 /**

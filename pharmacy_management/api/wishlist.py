@@ -9,7 +9,7 @@ def get_wishlist_key():
     return f"pharmacy_wishlist:guest:{frappe.session.sid}"
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def add_to_wishlist(medicine):
     """Add medicine to wishlist."""
     # Validate
@@ -26,7 +26,7 @@ def add_to_wishlist(medicine):
     return {"success": True, "message": _("Added to wishlist")}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def remove_from_wishlist(medicine):
     """Remove medicine from wishlist."""
     key = get_wishlist_key()
