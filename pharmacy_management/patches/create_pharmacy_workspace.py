@@ -28,32 +28,52 @@ def execute():
 
 	# ------------------------------------------------------------------ #
 	#  2. Build child-table data
+	#     links must have Card Break entries as group headers, followed
+	#     by Link entries.  card_name in content must match Card Break labels.
 	# ------------------------------------------------------------------ #
 
 	links = [
-		{"label": "Medicine Master",           "link_to": "Medicine Master",      "link_type": "DocType", "onboard": 1, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Medicine Batch",            "link_to": "Medicine Batch",       "link_type": "DocType", "onboard": 1, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Stock Adjustment",          "link_to": "Stock Adjustment",     "link_type": "DocType", "onboard": 1, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Patient",                   "link_to": "Patient",              "link_type": "DocType", "onboard": 1, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Drug Composition",          "link_to": "Drug Composition",     "link_type": "DocType", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Drug Manufacturer",         "link_to": "Drug Manufacturer",    "link_type": "DocType", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Medicine Category",         "link_to": "Medicine Category",    "link_type": "DocType", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Drug Composition Item",     "link_to": "Drug Composition Item","link_type": "DocType", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Expiry Alert",              "link_to": "Expiry Alert",         "link_type": "DocType", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Stock Transfer",            "link_to": "Stock Transfer",       "link_type": "DocType", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Stock Adjustment Item",     "link_to": "Stock Adjustment Item","link_type": "DocType", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Stock Transfer Item",       "link_to": "Stock Transfer Item",  "link_type": "DocType", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Audit Log",                 "link_to": "Audit Log",            "link_type": "DocType", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Drug License",              "link_to": "Drug License",         "link_type": "DocType", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Pharmacist",                "link_to": "Pharmacist",           "link_type": "DocType", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Shift Assignment",          "link_to": "Shift Assignment",     "link_type": "DocType", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Insurance Claim",           "link_to": "Insurance Claim",      "link_type": "DocType", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Insurance Provider",        "link_to": "Insurance Provider",   "link_type": "DocType", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Loyalty Program",           "link_to": "Loyalty Program",      "link_type": "DocType", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "POS Invoice Ext",           "link_to": "POS Invoice Ext",      "link_type": "DocType", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "POS Invoice Item Ext",      "link_to": "POS Invoice Item Ext", "link_type": "DocType", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
-		{"label": "Near Expiry Stock",         "link_to": "Near Expiry Stock",    "link_type": "Report",  "onboard": 0, "is_query_report": 1, "hidden": 0, "dependencies": ""},
-		{"label": "Stock Ledger Medicine",     "link_to": "Stock Ledger Medicine","link_type": "Report",  "onboard": 0, "is_query_report": 1, "hidden": 0, "dependencies": ""},
+		# Drug Catalog group
+		{"label": "Drug Catalog",          "type": "Card Break", "hidden": 0, "is_query_report": 0, "onboard": 0},
+		{"label": "Medicine Master",        "link_to": "Medicine Master",        "link_type": "DocType", "type": "Link", "onboard": 1, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		{"label": "Medicine Category",      "link_to": "Medicine Category",      "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		{"label": "Drug Manufacturer",      "link_to": "Drug Manufacturer",      "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		{"label": "Drug Composition",       "link_to": "Drug Composition",       "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		{"label": "Drug Composition Item",  "link_to": "Drug Composition Item",  "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		# Inventory group
+		{"label": "Inventory",             "type": "Card Break", "hidden": 0, "is_query_report": 0, "onboard": 0},
+		{"label": "Medicine Batch",         "link_to": "Medicine Batch",         "link_type": "DocType", "type": "Link", "onboard": 1, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		{"label": "Stock Adjustment",       "link_to": "Stock Adjustment",       "link_type": "DocType", "type": "Link", "onboard": 1, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		{"label": "Stock Adjustment Item",  "link_to": "Stock Adjustment Item",  "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		{"label": "Stock Transfer",         "link_to": "Stock Transfer",         "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		{"label": "Stock Transfer Item",    "link_to": "Stock Transfer Item",    "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		# Batch Tracking group
+		{"label": "Batch Tracking",        "type": "Card Break", "hidden": 0, "is_query_report": 0, "onboard": 0},
+		{"label": "Expiry Alert",           "link_to": "Expiry Alert",           "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		# Pharmacy CRM group
+		{"label": "Pharmacy CRM",          "type": "Card Break", "hidden": 0, "is_query_report": 0, "onboard": 0},
+		{"label": "Patient",                "link_to": "Patient",                "link_type": "DocType", "type": "Link", "onboard": 1, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		{"label": "Loyalty Program",        "link_to": "Loyalty Program",        "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		{"label": "Insurance Provider",     "link_to": "Insurance Provider",     "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		# Insurance group
+		{"label": "Insurance",             "type": "Card Break", "hidden": 0, "is_query_report": 0, "onboard": 0},
+		{"label": "Insurance Claim",        "link_to": "Insurance Claim",        "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		# Point of Sale group
+		{"label": "Point of Sale",         "type": "Card Break", "hidden": 0, "is_query_report": 0, "onboard": 0},
+		{"label": "POS Invoice Ext",        "link_to": "POS Invoice Ext",        "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		{"label": "POS Invoice Item Ext",   "link_to": "POS Invoice Item Ext",   "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		# Compliance group
+		{"label": "Compliance",            "type": "Card Break", "hidden": 0, "is_query_report": 0, "onboard": 0},
+		{"label": "Drug License",           "link_to": "Drug License",           "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		{"label": "Audit Log",              "link_to": "Audit Log",              "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		# Employee Operations group
+		{"label": "Employee Operations",   "type": "Card Break", "hidden": 0, "is_query_report": 0, "onboard": 0},
+		{"label": "Pharmacist",             "link_to": "Pharmacist",             "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		{"label": "Shift Assignment",       "link_to": "Shift Assignment",       "link_type": "DocType", "type": "Link", "onboard": 0, "is_query_report": 0, "hidden": 0, "dependencies": ""},
+		# Reports group
+		{"label": "Reports",               "type": "Card Break", "hidden": 0, "is_query_report": 0, "onboard": 0},
+		{"label": "Near Expiry Stock",      "link_to": "Near Expiry Stock",      "link_type": "Report",  "type": "Link", "onboard": 0, "is_query_report": 1, "hidden": 0, "dependencies": ""},
+		{"label": "Stock Ledger Medicine",  "link_to": "Stock Ledger Medicine",  "link_type": "Report",  "type": "Link", "onboard": 0, "is_query_report": 1, "hidden": 0, "dependencies": ""},
 	]
 
 	shortcuts = [
@@ -66,73 +86,40 @@ def execute():
 		{"label": "Purchase Request",  "link_to": "Purchase Request", "type": "DocType", "doc_view": "List"},
 	]
 
-	# Only use built-in roles that always exist in every Frappe site
 	roles = [
 		{"role": "System Manager"},
 	]
 
-	# content – JSON array of card / section / shortcut widgets  ----------
+	# content: card_name must match the Card Break label in links above
 	content = json.dumps([
-		{"id": "a1b2c3d4", "type": "header",     "data": {"text": "Quick Actions", "level": 4, "col": 12}},
-		{"id": "b2c3d4e5", "type": "shortcut",   "data": {"shortcut_name": "Medicine Master", "col": 3}},
-		{"id": "c3d4e5f6", "type": "shortcut",   "data": {"shortcut_name": "Medicine Batch", "col": 3}},
-		{"id": "d4e5f6g7", "type": "shortcut",   "data": {"shortcut_name": "Stock Adjustment", "col": 3}},
-		{"id": "e5f6g7h8", "type": "shortcut",   "data": {"shortcut_name": "Patient", "col": 3}},
-		{"id": "f6g7h8i9", "type": "header",     "data": {"text": "Pharmacy Operations", "level": 4, "col": 12}},
-		{"id": "g7h8i9j0", "type": "card",       "data": {"card_name": "Drug Catalog", "col": 4, "links": [
-			{"type": "link", "label": "Medicine Master", "link_to": "Medicine Master", "link_type": "DocType"},
-			{"type": "link", "label": "Medicine Category", "link_to": "Medicine Category", "link_type": "DocType"},
-			{"type": "link", "label": "Drug Manufacturer", "link_to": "Drug Manufacturer", "link_type": "DocType"},
-			{"type": "link", "label": "Drug Composition", "link_to": "Drug Composition", "link_type": "DocType"},
-			{"type": "link", "label": "Drug Composition Item", "link_to": "Drug Composition Item", "link_type": "DocType"},
-		]}},
-		{"id": "h8i9j0k1", "type": "card",       "data": {"card_name": "Inventory", "col": 4, "links": [
-			{"type": "link", "label": "Medicine Batch", "link_to": "Medicine Batch", "link_type": "DocType"},
-			{"type": "link", "label": "Stock Adjustment", "link_to": "Stock Adjustment", "link_type": "DocType"},
-			{"type": "link", "label": "Stock Adjustment Item", "link_to": "Stock Adjustment Item", "link_type": "DocType"},
-			{"type": "link", "label": "Stock Transfer", "link_to": "Stock Transfer", "link_type": "DocType"},
-			{"type": "link", "label": "Stock Transfer Item", "link_to": "Stock Transfer Item", "link_type": "DocType"},
-		]}},
-		{"id": "i9j0k1l2", "type": "card",       "data": {"card_name": "Batch Tracking", "col": 4, "links": [
-			{"type": "link", "label": "Expiry Alert", "link_to": "Expiry Alert", "link_type": "DocType"},
-		]}},
-		{"id": "j0k1l2m3", "type": "header",     "data": {"text": "Patient & CRM", "level": 4, "col": 12}},
-		{"id": "k1l2m3n4", "type": "card",       "data": {"card_name": "Pharmacy CRM", "col": 4, "links": [
-			{"type": "link", "label": "Patient", "link_to": "Patient", "link_type": "DocType"},
-			{"type": "link", "label": "Loyalty Program", "link_to": "Loyalty Program", "link_type": "DocType"},
-			{"type": "link", "label": "Insurance Provider", "link_to": "Insurance Provider", "link_type": "DocType"},
-		]}},
-		{"id": "l2m3n4o5", "type": "card",       "data": {"card_name": "Insurance", "col": 4, "links": [
-			{"type": "link", "label": "Insurance Claim", "link_to": "Insurance Claim", "link_type": "DocType"},
-			{"type": "link", "label": "Insurance Provider", "link_to": "Insurance Provider", "link_type": "DocType"},
-		]}},
-		{"id": "m3n4o5p6", "type": "card",       "data": {"card_name": "Point of Sale", "col": 4, "links": [
-			{"type": "link", "label": "POS Invoice Ext", "link_to": "POS Invoice Ext", "link_type": "DocType"},
-			{"type": "link", "label": "POS Invoice Item Ext", "link_to": "POS Invoice Item Ext", "link_type": "DocType"},
-		]}},
-		{"id": "n4o5p6q7", "type": "header",     "data": {"text": "Compliance & HR", "level": 4, "col": 12}},
-		{"id": "o5p6q7r8", "type": "card",       "data": {"card_name": "Compliance", "col": 6, "links": [
-			{"type": "link", "label": "Drug License", "link_to": "Drug License", "link_type": "DocType"},
-			{"type": "link", "label": "Audit Log", "link_to": "Audit Log", "link_type": "DocType"},
-		]}},
-		{"id": "p6q7r8s9", "type": "card",       "data": {"card_name": "Employee Operations", "col": 6, "links": [
-			{"type": "link", "label": "Pharmacist", "link_to": "Pharmacist", "link_type": "DocType"},
-			{"type": "link", "label": "Shift Assignment", "link_to": "Shift Assignment", "link_type": "DocType"},
-		]}},
-		{"id": "q7r8s9t0", "type": "header",     "data": {"text": "Reports", "level": 4, "col": 12}},
-		{"id": "r8s9t0u1", "type": "card",       "data": {"card_name": "Reports", "col": 12, "links": [
-			{"type": "link", "label": "Near Expiry Stock", "link_to": "Near Expiry Stock", "link_type": "Report"},
-			{"type": "link", "label": "Stock Ledger Medicine", "link_to": "Stock Ledger Medicine", "link_type": "Report"},
-		]}},
+		{"id": "aa1", "type": "header",   "data": {"text": "Quick Actions", "level": 4, "col": 12}},
+		{"id": "ab1", "type": "shortcut", "data": {"shortcut_name": "Medicine Master", "col": 3}},
+		{"id": "ab2", "type": "shortcut", "data": {"shortcut_name": "Medicine Batch", "col": 3}},
+		{"id": "ab3", "type": "shortcut", "data": {"shortcut_name": "Stock Adjustment", "col": 3}},
+		{"id": "ab4", "type": "shortcut", "data": {"shortcut_name": "Patient", "col": 3}},
+		{"id": "ab5", "type": "shortcut", "data": {"shortcut_name": "Prescription", "col": 3}},
+		{"id": "ab6", "type": "shortcut", "data": {"shortcut_name": "POS Invoice", "col": 3}},
+		{"id": "ab7", "type": "shortcut", "data": {"shortcut_name": "Purchase Request", "col": 3}},
+		{"id": "ba1", "type": "header",   "data": {"text": "Pharmacy Operations", "level": 4, "col": 12}},
+		{"id": "bb1", "type": "card",     "data": {"card_name": "Drug Catalog", "col": 4}},
+		{"id": "bb2", "type": "card",     "data": {"card_name": "Inventory", "col": 4}},
+		{"id": "bb3", "type": "card",     "data": {"card_name": "Batch Tracking", "col": 4}},
+		{"id": "ca1", "type": "header",   "data": {"text": "Patient & CRM", "level": 4, "col": 12}},
+		{"id": "cb1", "type": "card",     "data": {"card_name": "Pharmacy CRM", "col": 4}},
+		{"id": "cb2", "type": "card",     "data": {"card_name": "Insurance", "col": 4}},
+		{"id": "cb3", "type": "card",     "data": {"card_name": "Point of Sale", "col": 4}},
+		{"id": "da1", "type": "header",   "data": {"text": "Compliance & HR", "level": 4, "col": 12}},
+		{"id": "db1", "type": "card",     "data": {"card_name": "Compliance", "col": 6}},
+		{"id": "db2", "type": "card",     "data": {"card_name": "Employee Operations", "col": 6}},
+		{"id": "ea1", "type": "header",   "data": {"text": "Reports", "level": 4, "col": 12}},
+		{"id": "eb1", "type": "card",     "data": {"card_name": "Reports", "col": 12}},
 	])
 
 	# ------------------------------------------------------------------ #
-	#  3. Create / update the Workspace
+	#  3. Delete existing workspace and recreate from scratch
 	# ------------------------------------------------------------------ #
 
 	if frappe.db.exists("Workspace", workspace_name):
-		ws = frappe.get_doc("Workspace", workspace_name)
-		# Re-create from scratch so child tables are refreshed properly
 		frappe.delete_doc("Workspace", workspace_name, force=True)
 		frappe.db.commit()
 
