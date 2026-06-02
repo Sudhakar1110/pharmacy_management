@@ -970,10 +970,12 @@ def create_stock_transfers():
     warehouses = _ensure_warehouse()
     wh_list = [v for v in warehouses.values() if v] or [_get_warehouse()]
     wh_list = [w for w in wh_list if w]
+    # Deduplicate — we need at least 2 different warehouses for transfers
+    wh_list = list(set(wh_list))
     medicines = frappe.db.get_all("Medicine Master", fields=["name", "medicine_name"])
 
     if not medicines or len(wh_list) < 2:
-        print("  ⚠ Not enough warehouses/medicines, skipping stock transfers...")
+        print("  ⚠ Not enough distinct warehouses (need 2+), skipping stock transfers...")
         return
 
     transfers = [
