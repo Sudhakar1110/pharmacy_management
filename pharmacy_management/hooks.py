@@ -3,7 +3,7 @@ from . import __version__ as app_version
 app_name = "pharmacy_management"
 app_title = "Pharmacy Management"
 app_publisher = "Your Company"
-app_description = "Complete Pharmacy Management System for ERPNext v15+"
+app_description = "Complete Pharmacy E-Commerce + Management System for ERPNext v15+"
 app_email = "admin@yourcompany.com"
 app_license = "MIT"
 app_version = app_version
@@ -14,6 +14,15 @@ required_apps = ["erpnext"]
 # Includes in <head>
 app_include_css = "/assets/pharmacy_management/css/pharmacy.css"
 app_include_js = "/assets/pharmacy_management/js/pharmacy.js"
+
+# Website Routes (Frappe www)
+# /shop/<subpath> routes to shop.py for medicine detail pages
+website_route_rules = [
+    {"from_route": "/shop/<path:subpath>", "to_route": "shop"},
+]
+
+# Website page titles
+website_page_title = "Pharmacy Management"
 
 # Document Events
 doc_events = {
@@ -28,6 +37,9 @@ doc_events = {
     },
     "Medicine Batch": {
         "before_save": "pharmacy_management.inventory.doctype.medicine_batch.medicine_batch.check_expiry",
+    },
+    "Sales Order": {
+        "on_submit": "pharmacy_management.api.checkout.on_sales_order_submit",
     },
 }
 
@@ -62,7 +74,6 @@ fixtures = [
 permission_query_conditions = {
     "Prescription": "pharmacy_management.prescription.doctype.prescription.prescription.get_permission_query_conditions",
 }
-
 
 # Notification Config
 notification_config = "pharmacy_management.notifications.get_notification_config"

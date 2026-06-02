@@ -1,0 +1,175 @@
+{% extends "templates/pages/base.html" %}
+
+{% block title %}My Prescriptions - Pharmacy Management{% endblock %}
+
+{% block content %}
+<div class="prescriptions-page">
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold mb-0"><i class="bi bi-prescription2"></i> My Prescriptions</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadRxModal">
+                <i class="bi bi-upload"></i> Upload New
+            </button>
+        </div>
+
+        <!-- Upload Modal -->
+        <div class="modal fade" id="uploadRxModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Upload Prescription</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Upload Image (JPG/PNG/PDF)</label>
+                            <input type="file" id="rxUpload" class="form-control" accept="image/*,.pdf">
+                            <div id="rxPreview" class="mt-2 d-none">
+                                <img id="rxPreviewImg" class="img-thumbnail" style="max-height:200px;">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notes for Pharmacist</label>
+                            <textarea id="rxNotes" class="form-control" rows="3" placeholder="Any instructions..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="uploadPrescription()">
+                            <i class="bi bi-upload"></i> Upload
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="prescriptionsContent">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+let uploadedRxBase64 = null;
+
+$(document).ready(function() {
+    loadPrescriptions();
+    
+    $('#rxUpload').on('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('File too large. Max 5MB.', 'warning');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            uploadedRxBase64 = e.target.result.split(',')[1];
+            $('#rxPreview').removeClass('d-none');
+            $('#rxPreviewImg').attr('src', e.target.result);
+        };
+        reader.readAsDataURL(file);
+    });
+});
+
+function loadPrescriptions() {
+    $.get('/api/method/pharmacy_management.api.prescription.get_prescriptions', function(res) {
+        const data = res.message;
+        
+        if (data.prescriptions.length === 0) {
+            $('#prescriptionsContent').html(`
+                <div class="text-center py-5">
+                    <i class="bi bi-prescription2 display-1 text-muted"></i>
+                    <h4 class="mt-3">No prescriptions uploaded</h4>
+                    <p class="text-muted">Upload your prescription to order medicines</p>
+                </div>
+            `);
+            return;
+        }
+        
+        let html = '<div class="row g-3">';
+        data.prescriptions.forEach(function(rx) {
+            const statusClass = {
+                'Uploaded': 'warning',
+                'Verification': 'info',
+                'Dispensing': 'primary',
+                'Completed': 'success',
+                'Cancelled': 'danger'
+            }[rx.status] || 'secondary';
+            
+            html += `
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="fw-bold mb-1">${rx.name}</h6>
+                                    <small class="text-muted">${rx.prescription_date}</small>
+                                </div>
+                                <span class="badge bg-${statusClass}">${rx.status}</span>
+                            </div>
+                            ${rx.medicines && rx.medicines.length > 0 ? `
+                            <div class="mt-2">
+                                <small class="text-muted">Medicines: </small>
+                                ${rx.medicines.map(m => `<span class="badge bg-light text-dark me-1">${m.medicine_name}</span>`).join('')}
+                            </div>` : ''}
+                            ${rx.notes ? `<small class="d-block mt-2 text-muted">${rx.notes}</small>` : ''}
+                            <div class="mt-2">
+                                <button class="btn btn-outline-primary btn-sm" onclick="requestRefill('${rx.name}')">
+                                    <i class="bi bi-arrow-clockwise"></i> Request Refill
+                                </button>
+                                ${rx.prescription_image ? `<a href="${rx.prescription_image}" target="_blank" class="btn btn-outline-info btn-sm ms-1">
+                                    <i class="bi bi-eye"></i> View</a>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        });
+        html += '</div>';
+        $('#prescriptionsContent').html(html);
+    });
+}
+
+function uploadPrescription() {
+    if (!uploadedRxBase64) {
+        showToast('Please select a file', 'warning');
+        return;
+    }
+    
+    const btn = $('#uploadRxModal .btn-primary');
+    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Uploading...');
+    
+    $.post('/api/method/pharmacy_management.api.prescription.upload_prescription', {
+        image: uploadedRxBase64,
+        notes: $('#rxNotes').val()
+    }, function(res) {
+        if (res.message.success) {
+            $('#uploadRxModal').modal('hide');
+            $('#rxUpload').val('');
+            $('#rxNotes').val('');
+            $('#rxPreview').addClass('d-none');
+            uploadedRxBase64 = null;
+            showToast('Prescription uploaded! A pharmacist will verify it.', 'success');
+            loadPrescriptions();
+        }
+    }).always(function() {
+        btn.prop('disabled', false).html('<i class="bi bi-upload"></i> Upload');
+    });
+}
+
+function requestRefill(prescriptionId) {
+    $.post('/api/method/pharmacy_management.api.prescription.request_refill', {
+        prescription_id: prescriptionId
+    }, function(res) {
+        if (res.message.success) {
+            showToast('Refill requested! Please upload a new image.', 'info');
+            $('#uploadRxModal').modal('show');
+        }
+    });
+}
+</script>
+{% endblock %}

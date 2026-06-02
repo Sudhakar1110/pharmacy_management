@@ -1,0 +1,26 @@
+{
+  "doctype": "DocType",
+  "name": "Order Status",
+  "module": "Pharmacy Management",
+  "autoname": "naming_series:",
+  "naming_series": "OS-.YYYY.-",
+  "title_field": "sales_order",
+  "fields": [
+    {"fieldname": "naming_series", "fieldtype": "Select", "label": "Series", "options": "OS-.YYYY.-", "hidden": 1},
+    {"fieldname": "sales_order", "fieldtype": "Link", "label": "Sales Order", "options": "Sales Order", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1},
+    {"fieldname": "status", "fieldtype": "Select", "label": "Status", "options": "Pending\nConfirmed\nPacked\nShipped\nOut For Delivery\nDelivered\nCancelled\nReturned", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "date", "fieldtype": "Datetime", "label": "Date", "reqd": 1, "default": "Now"},
+    {"fieldname": "estimated_delivery", "fieldtype": "Date", "label": "Estimated Delivery"},
+    {"fieldname": "notes", "fieldtype": "Small Text", "label": "Notes"}
+  ],
+  "permissions": [
+    {"create": 1, "delete": 1, "read": 1, "write": 1, "role": "System Manager"},
+    {"create": 1, "read": 1, "write": 1, "role": "Pharmacy Administrator"},
+    {"read": 1, "role": "Pharmacist"},
+    {"read": 1, "role": "Customer"}
+  ],
+  "quick_entry": 1,
+  "track_changes": 1,
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

@@ -1,0 +1,340 @@
+{% extends "templates/pages/base.html" %}
+
+{% block title %}Medicine Detail - {{ medicine.medicine_name }}{% endblock %}
+
+{% block content %}
+<div class="medicine-detail-page">
+    <div class="container py-4">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/shop">Shop</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ medicine.medicine_name }}</li>
+            </ol>
+        </nav>
+
+        <!-- Schema.org structured data -->
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org/",
+            "@type": "Product",
+            "name": "{{ medicine.medicine_name }}",
+            "description": "{{ medicine.generic_name or '' }} - {{ medicine.strength or '' }} {{ medicine.dosage_form or '' }}",
+            "brand": {
+                "@type": "Brand",
+                "name": "{{ medicine.manufacturer or '' }}"
+            },
+            "offers": {
+                "@type": "Offer",
+                "priceCurrency": "INR",
+                "price": "{{ medicine.selling_rate or medicine.mrp }}",
+                "availability": "{% if in_stock %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}"
+            }
+        }
+        </script>
+
+        <div class="row g-4">
+            <!-- Product Image -->
+            <div class="col-lg-5">
+                <div class="product-image-card card border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        {% if medicine.image %}
+                        <img src="{{ medicine.image }}" alt="{{ medicine.medicine_name }}" 
+                             class="img-fluid" style="max-height: 350px; object-fit: contain;">
+                        {% else %}
+                        <img src="/assets/pharmacy_management/images/medicine-placeholder.svg" 
+                             alt="{{ medicine.medicine_name }}" class="img-fluid" style="max-height: 350px;">
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Info -->
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        {% if discount > 0 %}
+                        <span class="badge bg-danger mb-2">{{ discount }}% OFF</span>
+                        {% endif %}
+                        {% if medicine.requires_prescription %}
+                        <span class="badge bg-warning text-dark mb-2">Prescription Required</span>
+                        {% endif %}
+                        {% if medicine.narcotic %}
+                        <span class="badge bg-danger mb-2">Controlled Substance</span>
+                        {% endif %}
+                        
+                        <h2 class="fw-bold mb-2">{{ medicine.medicine_name }}</h2>
+                        <p class="text-muted mb-1">{{ medicine.generic_name }}</p>
+                        <p class="mb-3">
+                            <span class="badge bg-light text-dark me-1">{{ medicine.strength }}</span>
+                            <span class="badge bg-light text-dark">{{ medicine.dosage_form }}</span>
+                        </p>
+
+                        <hr>
+
+                        <div class="pricing-section mb-3">
+                            <div class="d-flex align-items-baseline gap-2">
+                                <span class="display-6 fw-bold text-primary">₹{{ medicine.selling_rate or medicine.mrp }}</span>
+                                {% if medicine.mrp and medicine.mrp > (medicine.selling_rate or medicine.mrp) %}
+                                <span class="text-decoration-line-through text-muted fs-5">₹{{ medicine.mrp }}</span>
+                                <span class="text-success fw-semibold">Save ₹{{ (medicine.mrp - (medicine.selling_rate or medicine.mrp))|int }}</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-muted small mt-1">Inclusive of all taxes</p>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="stock-indicator">
+                                {% if in_stock %}
+                                <span class="text-success"><i class="bi bi-check-circle-fill"></i> In Stock</span>
+                                {% else %}
+                                <span class="text-danger"><i class="bi bi-x-circle-fill"></i> Out of Stock</span>
+                                {% endif %}
+                            </div>
+                            <div class="qty-selector d-flex align-items-center">
+                                <button class="btn btn-outline-secondary btn-sm" onclick="changeQty(-1)">-</button>
+                                <input type="number" id="qtyInput" class="form-control form-control-sm text-center mx-2" 
+                                       value="1" min="1" max="{{ stock }}" style="width: 60px;">
+                                <button class="btn btn-outline-secondary btn-sm" onclick="changeQty(1)">+</button>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex">
+                            <button class="btn btn-primary btn-lg flex-grow-1" onclick="addToCart()" 
+                                    {% if not in_stock %}disabled{% endif %}>
+                                <i class="bi bi-cart-plus"></i> Add to Cart
+                            </button>
+                            <button class="btn btn-success btn-lg flex-grow-1" onclick="buyNow()"
+                                    {% if not in_stock %}disabled{% endif %}>
+                                <i class="bi bi-lightning-fill"></i> Buy Now
+                            </button>
+                            <button class="btn btn-outline-danger btn-lg" onclick="toggleWishlist()" 
+                                    id="wishlistBtn">
+                                <i class="bi {% if in_wishlist %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+                            </button>
+                        </div>
+
+                        <div class="delivery-info mt-3 p-3 bg-light rounded">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-truck text-primary fs-5"></i>
+                                {% if in_stock %}
+                                <span>Free delivery on orders above ₹500 | Expected delivery in 2-3 days</span>
+                                {% else %}
+                                <span>Currently out of stock. We'll notify you when available.</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product Details Tab -->
+                <div class="card border-0 shadow-sm mt-3">
+                    <div class="card-body p-4">
+                        <ul class="nav nav-tabs" id="productTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="details-tab" data-bs-toggle="tab" 
+                                        data-bs-target="#details" type="button">Details</button>
+                            </li>
+                            {% if composition %}
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="composition-tab" data-bs-toggle="tab" 
+                                        data-bs-target="#composition" type="button">Composition</button>
+                            </li>
+                            {% endif %}
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="storage-tab" data-bs-toggle="tab" 
+                                        data-bs-target="#storage" type="button">Storage</button>
+                            </li>
+                        </ul>
+                        <div class="tab-content mt-3" id="productTabsContent">
+                            <div class="tab-pane fade show active" id="details" role="tabpanel">
+                                <table class="table table-borderless">
+                                    <tr><td class="text-muted">Category</td><td class="fw-semibold">{{ medicine.category }}</td></tr>
+                                    <tr><td class="text-muted">Manufacturer</td><td class="fw-semibold">{{ medicine.manufacturer or 'N/A' }}</td></tr>
+                                    <tr><td class="text-muted">Brand</td><td class="fw-semibold">{{ medicine.brand_name or 'N/A' }}</td></tr>
+                                    <tr><td class="text-muted">Pack Size</td><td class="fw-semibold">{{ medicine.pack_size or 'N/A' }}</td></tr>
+                                    <tr><td class="text-muted">Unit</td><td class="fw-semibold">{{ medicine.unit_of_measure or 'N/A' }}</td></tr>
+                                    <tr><td class="text-muted">Schedule</td><td class="fw-semibold">{{ medicine.schedule or 'OTC' }}</td></tr>
+                                    <tr><td class="text-muted">HSN Code</td><td class="fw-semibold">{{ medicine.hsn_code or 'N/A' }}</td></tr>
+                                    <tr><td class="text-muted">GST</td><td class="fw-semibold">{{ medicine.gst_rate or '0' }}%</td></tr>
+                                </table>
+                                {% if medicine.description %}
+                                <div class="mt-2">{{ medicine.description }}</div>
+                                {% endif %}
+                            </div>
+                            {% if composition %}
+                            <div class="tab-pane fade" id="composition" role="tabpanel">
+                                <h6>{{ composition.composition_name }}</h6>
+                                <p class="text-muted">{{ composition.therapeutic_class or '' }}</p>
+                                <table class="table table-borderless">
+                                    <thead><tr><th>Ingredient</th><th>Strength</th><th>Unit</th></tr></thead>
+                                    <tbody>
+                                        {% for item in composition.active_ingredients %}
+                                        <tr>
+                                            <td>{{ item.ingredient_name }}</td>
+                                            <td>{{ item.strength }}</td>
+                                            <td>{{ item.unit }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                                {% if composition.contraindications %}
+                                <h6 class="mt-3">Contraindications</h6>
+                                <p>{{ composition.contraindications }}</p>
+                                {% endif %}
+                                {% if composition.side_effects %}
+                                <h6 class="mt-3">Side Effects</h6>
+                                <p>{{ composition.side_effects }}</p>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            <div class="tab-pane fade" id="storage" role="tabpanel">
+                                <table class="table table-borderless">
+                                    <tr><td class="text-muted">Storage Condition</td><td class="fw-semibold">{{ medicine.storage_condition or 'Room Temperature' }}</td></tr>
+                                    <tr><td class="text-muted">Shelf Life</td><td class="fw-semibold">{{ medicine.shelf_life_months or 'N/A' }} months</td></tr>
+                                    <tr><td class="text-muted">Cold Chain Required</td><td class="fw-semibold">{{ 'Yes' if medicine.cold_chain else 'No' }}</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Related Medicines -->
+        {% if related_medicines %}
+        <div class="mt-4">
+            <h4 class="fw-bold mb-3">Related Medicines</h4>
+            <div class="row g-3">
+                {% for rel in related_medicines %}
+                <div class="col-md-3 col-sm-6">
+                    <div class="card medicine-card h-100 border-0 shadow-sm">
+                        <div class="card-img-wrapper">
+                            <a href="/shop/{{ rel.name }}">
+                                <img src="{{ rel.image or '/assets/pharmacy_management/images/medicine-placeholder.svg' }}" 
+                                     class="card-img-top" alt="{{ rel.medicine_name }}"
+                                     onerror="this.src='/assets/pharmacy_management/images/medicine-placeholder.svg'">
+                            </a>
+                            {% if rel.discount_percent and rel.discount_percent > 0 %}
+                            <span class="discount-badge">{{ rel.discount_percent }}% OFF</span>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <a href="/shop/{{ rel.name }}" class="text-decoration-none">
+                                <h6 class="card-title text-dark fw-semibold mb-1">{{ rel.medicine_name }}</h6>
+                            </a>
+                            <p class="text-muted small mb-2">{{ rel.strength or '' }} {{ rel.dosage_form or '' }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold text-primary">₹{{ rel.selling_rate or rel.mrp }}</span>
+                                {% if rel.mrp > (rel.selling_rate or rel.mrp) %}
+                                <small class="text-decoration-line-through text-muted">₹{{ rel.mrp }}</small>
+                                {% endif %}
+                            </div>
+                            {% if rel.requires_prescription %}
+                            <span class="badge bg-warning text-dark small mt-1">Rx Required</span>
+                            {% endif %}
+                            <button class="btn btn-outline-primary btn-sm w-100 mt-2" 
+                                    onclick="addToCartDirect('{{ rel.name }}')">
+                                <i class="bi bi-cart-plus"></i> Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    let currentStock = {{ stock }};
+    
+    function changeQty(delta) {
+        let input = $('#qtyInput');
+        let val = parseInt(input.val()) || 1;
+        val = Math.max(1, Math.min(val + delta, currentStock));
+        input.val(val);
+    }
+
+    function addToCart() {
+        let qty = $('#qtyInput').val();
+        $.post('/api/method/pharmacy_management.api.cart.add_to_cart', {
+            medicine: '{{ medicine.name }}',
+            qty: qty
+        }, function(res) {
+            if (res.message.success) {
+                showToast('Added to cart!', 'success');
+                updateCartBadge();
+            }
+        }).fail(function(xhr) {
+            showToast(xhr.responseJSON?.message || 'Error', 'danger');
+        });
+    }
+
+    function buyNow() {
+        let qty = $('#qtyInput').val();
+        $.post('/api/method/pharmacy_management.api.cart.add_to_cart', {
+            medicine: '{{ medicine.name }}',
+            qty: qty
+        }, function(res) {
+            if (res.message.success) {
+                window.location.href = '/cart';
+            }
+        });
+    }
+
+    function toggleWishlist() {
+        {% if in_wishlist %}
+        $.post('/api/method/pharmacy_management.api.wishlist.remove_from_wishlist', {
+            medicine: '{{ medicine.name }}'
+        }, function() {
+            $('#wishlistBtn i').attr('class', 'bi bi-heart');
+            showToast('Removed from wishlist', 'info');
+        });
+        {% else %}
+        $.post('/api/method/pharmacy_management.api.wishlist.add_to_wishlist', {
+            medicine: '{{ medicine.name }}'
+        }, function() {
+            $('#wishlistBtn i').attr('class', 'bi bi-heart-fill');
+            showToast('Added to wishlist!', 'success');
+        });
+        {% endif %}
+    }
+
+    function addToCartDirect(medicine) {
+        $.post('/api/method/pharmacy_management.api.cart.add_to_cart', {
+            medicine: medicine,
+            qty: 1
+        }, function(res) {
+            if (res.message.success) {
+                showToast('Added to cart!', 'success');
+                updateCartBadge();
+            }
+        });
+    }
+
+    function showToast(message, type) {
+        const toast = $(`
+            <div class="toast align-items-center text-bg-${type} border-0 position-fixed bottom-0 end-0 m-3" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `);
+        $('body').append(toast);
+        toast.toast({delay: 3000}).toast('show');
+        setTimeout(() => toast.remove(), 3500);
+    }
+
+    function updateCartBadge() {
+        $.get('/api/method/pharmacy_management.api.cart.get_cart_count', function(res) {
+            $('.cart-badge').text(res.message.count).toggleClass('d-none', res.message.count === 0);
+        });
+    }
+</script>
+{% endblock %}

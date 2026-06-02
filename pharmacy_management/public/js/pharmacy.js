@@ -1,5 +1,13 @@
-// Pharmacy Management - Global JS
+// ============================================================
+// PHARMACY MANAGEMENT - GLOBAL JAVASCRIPT
+// Backend (Frappe) + Frontend (E-Commerce) functionality
+// ============================================================
 
+// ============================================================
+// BACKEND: Frappe Form Scripts
+// ============================================================
+
+// --- POS Invoice Ext ---
 frappe.ui.form.on('POS Invoice Ext', {
     medicine: function(frm, cdt, cdn) {
         const row = locals[cdt][cdn];
@@ -68,7 +76,7 @@ function calculate_row_amount(cdt, cdn) {
     frappe.model.set_value(cdt, cdn, 'amount', (row.qty || 0) * rate);
 }
 
-// Medicine Batch - show color based on status
+// --- Medicine Batch List View ---
 frappe.listview_settings['Medicine Batch'] = {
     get_indicator: function(doc) {
         if (doc.batch_status === 'Expired') return [__('Expired'), 'red', 'batch_status,=,Expired'];
@@ -77,6 +85,7 @@ frappe.listview_settings['Medicine Batch'] = {
     }
 };
 
+// --- Prescription List View ---
 frappe.listview_settings['Prescription'] = {
     get_indicator: function(doc) {
         const map = {
@@ -86,3 +95,77 @@ frappe.listview_settings['Prescription'] = {
         return [__(doc.status), map[doc.status] || 'grey', `status,=,${doc.status}`];
     }
 };
+
+// ============================================================
+// FRONTEND: E-Commerce Website (Bootstrap + jQuery)
+// ============================================================
+
+$(document).ready(function() {
+    // Auto-fetch cart badge on all pages
+    if (typeof updateCartBadge === 'undefined') {
+        updateCartBadge();
+    }
+});
+
+/**
+ * Update the cart icon badge with current item count.
+ */
+function updateCartBadge() {
+    try {
+        $.get('/api/method/pharmacy_management.api.cart.get_cart_count', function(res) {
+            if (res.message) {
+                const count = res.message.count || 0;
+                $('.cart-badge').text(count).toggleClass('d-none', count === 0);
+            }
+        });
+    } catch(e) {
+        // Silently fail on pages where this isn't needed
+    }
+}
+
+/**
+ * Update the wishlist icon badge with current item count.
+ */
+function updateWishlistBadge() {
+    try {
+        $.get('/api/method/pharmacy_management.api.wishlist.get_wishlist', function(res) {
+            if (res.message) {
+                const count = res.message.wishlist ? res.message.wishlist.length : 0;
+                $('.wishlist-badge').text(count).toggleClass('d-none', count === 0);
+            }
+        });
+    } catch(e) {}
+}
+
+/**
+ * Generic toast notification function.
+ */
+function showToast(message, type) {
+    if (typeof $ === 'undefined') return;
+    const iconMap = {
+        'success': 'bi-check-circle-fill',
+        'danger': 'bi-exclamation-circle-fill',
+        'warning': 'bi-exclamation-triangle-fill',
+        'info': 'bi-info-circle-fill'
+    };
+    const toast = $(`
+        <div class="toast align-items-center text-bg-${type} border-0 position-fixed bottom-0 end-0 m-3" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi ${iconMap[type] || 'bi-check-circle-fill'} me-2"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `);
+    $('body').append(toast);
+    // Use Bootstrap 5 Toast
+    if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+        const bsToast = new bootstrap.Toast(toast[0], { delay: 3000 });
+        bsToast.show();
+    } else {
+        toast.fadeIn(300).delay(3000).fadeOut(300, function() { $(this).remove(); });
+    }
+    setTimeout(() => toast.remove(), 3500);
+}

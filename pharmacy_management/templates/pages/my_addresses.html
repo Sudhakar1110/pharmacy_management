@@ -1,0 +1,165 @@
+{% extends "templates/pages/base.html" %}
+
+{% block title %}My Addresses - Pharmacy Management{% endblock %}
+
+{% block content %}
+<div class="addresses-page">
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold mb-0"><i class="bi bi-geo-alt"></i> My Addresses</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+                <i class="bi bi-plus-lg"></i> Add Address
+            </button>
+        </div>
+        
+        <div id="addressesContent">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Address Modal -->
+<div class="modal fade" id="addAddressModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Address</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addressForm">
+                    <div class="mb-3">
+                        <label class="form-label">Address Line 1 *</label>
+                        <input type="text" id="addrLine1" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address Line 2</label>
+                        <input type="text" id="addrLine2" class="form-control">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label">City *</label>
+                            <input type="text" id="addrCity" class="form-control" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">State *</label>
+                            <input type="text" id="addrState" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Pincode *</label>
+                        <input type="text" id="addrPincode" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" id="addrPhone" class="form-control">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveAddress()">Save Address</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+$(document).ready(function() {
+    loadAddresses();
+});
+
+function loadAddresses() {
+    $.get('/api/method/pharmacy_management.api.customer.get_addresses', function(res) {
+        const addresses = res.message.addresses;
+        
+        if (addresses.length === 0) {
+            $('#addressesContent').html(`
+                <div class="text-center py-5">
+                    <i class="bi bi-geo display-1 text-muted"></i>
+                    <h4 class="mt-3">No addresses saved</h4>
+                    <p class="text-muted">Add a delivery address for faster checkout</p>
+                </div>
+            `);
+            return;
+        }
+        
+        let html = '<div class="row g-3">';
+        addresses.forEach(function(addr) {
+            const tags = [];
+            if (addr.is_shipping) tags.push('<span class="badge bg-primary">Shipping</span>');
+            if (addr.is_billing) tags.push('<span class="badge bg-info">Billing</span>');
+            
+            html += `
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between mb-2">
+                                <h6 class="fw-bold mb-0">${addr.address_line1 || ''}</h6>
+                                <div>${tags.join(' ')}</div>
+                            </div>
+                            <p class="mb-1 text-muted">
+                                ${addr.address_line1 || ''}${addr.address_line2 ? ', ' + addr.address_line2 : ''}<br>
+                                ${addr.city}, ${addr.state} - ${addr.pincode}<br>
+                                ${addr.phone ? `<small>Phone: ${addr.phone}</small>` : ''}
+                            </p>
+                            <div class="mt-2">
+                                <button class="btn btn-outline-danger btn-sm" onclick="deleteAddress('${addr.name}')">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        });
+        html += '</div>';
+        $('#addressesContent').html(html);
+    });
+}
+
+function saveAddress() {
+    const data = {
+        address_line1: $('#addrLine1').val(),
+        address_line2: $('#addrLine2').val(),
+        city: $('#addrCity').val(),
+        state: $('#addrState').val(),
+        pincode: $('#addrPincode').val(),
+        phone: $('#addrPhone').val(),
+        is_shipping: 1
+    };
+    
+    if (!data.address_line1 || !data.city || !data.state || !data.pincode) {
+        showToast('Please fill in all required fields', 'warning');
+        return;
+    }
+    
+    $.post('/api/method/pharmacy_management.api.customer.save_address', data, function(res) {
+        if (res.message.success) {
+            $('#addAddressModal').modal('hide');
+            $('#addressForm')[0].reset();
+            showToast('Address added!', 'success');
+            loadAddresses();
+        }
+    }).fail(function(xhr) {
+        showToast(xhr.responseJSON?.message || 'Error', 'danger');
+    });
+}
+
+function deleteAddress(name) {
+    if (!confirm('Delete this address?')) return;
+    
+    $.post('/api/method/pharmacy_management.api.customer.delete_address', {
+        address_name: name
+    }, function(res) {
+        if (res.message.success) {
+            showToast('Address deleted', 'info');
+            loadAddresses();
+        }
+    });
+}
+</script>
+{% endblock %}

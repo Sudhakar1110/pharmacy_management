@@ -1,0 +1,434 @@
+{% extends "templates/pages/base.html" %}
+
+{% block title %}Shop Medicines - Pharmacy Management{% endblock %}
+
+{% block content %}
+<div class="shop-page">
+    <!-- Search & Filter Bar -->
+    <section class="shop-header bg-white border-bottom sticky-top">
+        <div class="container py-3">
+            <div class="row align-items-center g-3">
+                <div class="col-lg-5">
+                    <div class="search-box">
+                        <i class="bi bi-search search-icon"></i>
+                        <input type="text" id="medicineSearch" class="form-control form-control-lg ps-5"
+                               placeholder="Search medicines..." autocomplete="off">
+                        <div id="searchSuggestions" class="search-suggestions d-none"></div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-6">
+                    <select id="categoryFilter" class="form-select form-select-lg">
+                        <option value="">All Categories</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.name }}" {% if selected_category == cat.name %}selected{% endif %}>
+                            {{ cat.category_name }} ({{ cat.medicine_count }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-3">
+                    <select id="sortFilter" class="form-select form-select-lg">
+                        <option value="name_asc">Name A-Z</option>
+                        <option value="name_desc">Name Z-A</option>
+                        <option value="price_low">Price: Low to High</option>
+                        <option value="price_high">Price: High to Low</option>
+                        <option value="newest">Newest First</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 col-3">
+                    <button class="btn btn-primary btn-lg w-100" onclick="toggleFilters()">
+                        <i class="bi bi-funnel"></i> Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container py-4">
+        <div class="row">
+            <!-- Sidebar Filters -->
+            <div class="col-lg-3" id="filterSidebar">
+                <div class="card shadow-sm border-0 sticky-sidebar">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">Filters</h5>
+                        
+                        <!-- Price Range -->
+                        <div class="filter-section mb-3">
+                            <h6 class="fw-semibold mb-2">Price Range</h6>
+                            <div class="d-flex gap-2">
+                                <input type="number" id="minPrice" class="form-control" placeholder="Min" min="0">
+                                <input type="number" id="maxPrice" class="form-control" placeholder="Max" min="0">
+                            </div>
+                        </div>
+
+                        <!-- Dosage Form -->
+                        <div class="filter-section mb-3">
+                            <h6 class="fw-semibold mb-2">Dosage Form</h6>
+                            {% for form in dosage_forms %}
+                            <div class="form-check">
+                                <input class="form-check-input filter-checkbox" type="checkbox" 
+                                       value="{{ form.dosage_form }}" id="df_{{ loop.index }}">
+                                <label class="form-check-label" for="df_{{ loop.index }}">
+                                    {{ form.dosage_form }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Schedule -->
+                        <div class="filter-section mb-3">
+                            <h6 class="fw-semibold mb-2">Drug Schedule</h6>
+                            {% for sched in schedules %}
+                            <div class="form-check">
+                                <input class="form-check-input filter-checkbox" type="checkbox" 
+                                       value="{{ sched.schedule }}" id="sched_{{ loop.index }}">
+                                <label class="form-check-label" for="sched_{{ loop.index }}">
+                                    Schedule {{ sched.schedule }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <button class="btn btn-primary w-100" onclick="applyFilters()">Apply Filters</button>
+                        <button class="btn btn-outline-secondary w-100 mt-2" onclick="clearFilters()">Clear All</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Medicine Grid -->
+            <div class="col-lg-9">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0" id="resultCount">Loading medicines...</h5>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-secondary btn-sm active" onclick="setView('grid')" title="Grid View">
+                            <i class="bi bi-grid-3x3-gap-fill"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="setView('list')" title="List View">
+                            <i class="bi bi-list"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="medicineGrid" class="row g-3">
+                    <!-- Medicines will be loaded by JS -->
+                </div>
+
+                <!-- Pagination -->
+                <nav id="pagination" class="mt-4 d-none">
+                    <ul class="pagination justify-content-center">
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick View Modal -->
+<div class="modal fade" id="quickViewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="qvTitle">Medicine Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="qvContent">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+let currentPage = 1;
+let currentView = 'grid';
+let searchTimeout = null;
+
+$(document).ready(function() {
+    loadMedicines();
+    
+    // Search with debounce
+    $('#medicineSearch').on('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(loadMedicines, 300);
+        showSuggestions($(this).val());
+    });
+
+    // Category filter
+    $('#categoryFilter').on('change', function() {
+        currentPage = 1;
+        loadMedicines();
+    });
+
+    // Sort
+    $('#sortFilter').on('change', function() {
+        currentPage = 1;
+        loadMedicines();
+    });
+});
+
+function showSuggestions(query) {
+    if (query.length < 2) {
+        $('#searchSuggestions').addClass('d-none');
+        return;
+    }
+    $.get('/api/method/pharmacy_management.api.medicine.autocomplete_medicines', {
+        query: query
+    }, function(res) {
+        const suggestions = res.message || [];
+        if (suggestions.length > 0) {
+            let html = suggestions.map(m => `
+                <a href="/shop/${m.name}" class="suggestion-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>${m.medicine_name}</strong>
+                            <small class="text-muted d-block">${m.generic_name || ''} ${m.strength || ''}</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="text-primary fw-bold">₹${m.selling_rate || m.mrp}</div>
+                            ${m.mrp > m.selling_rate ? `<small class="text-decoration-line-through text-muted">₹${m.mrp}</small>` : ''}
+                        </div>
+                    </div>
+                </a>
+            `).join('');
+            $('#searchSuggestions').html(html).removeClass('d-none');
+        } else {
+            $('#searchSuggestions').addClass('d-none');
+        }
+    });
+}
+
+function loadMedicines() {
+    const query = $('#medicineSearch').val();
+    const category = $('#categoryFilter').val();
+    const sort = $('#sortFilter').val();
+    const minPrice = $('#minPrice').val();
+    const maxPrice = $('#maxPrice').val();
+
+    $('#medicineGrid').html(`
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `);
+
+    $.get('/api/method/pharmacy_management.api.medicine.search_medicines', {
+        query: query,
+        category: category,
+        min_price: minPrice,
+        max_price: maxPrice,
+        sort_by: sort,
+        page: currentPage,
+        limit: 12
+    }, function(res) {
+        const data = res.message;
+        $('#resultCount').text(`Showing ${data.medicines.length} of ${data.total} medicines`);
+        
+        let html = '';
+        data.medicines.forEach(function(med) {
+            const discount = med.discount_percent > 0 ? 
+                `<span class="discount-badge">${med.discount_percent}% OFF</span>` : '';
+            const rx = med.requires_prescription ? 
+                `<span class="badge bg-warning text-dark small">Rx Required</span>` : '';
+            const stockStatus = med.in_stock ?
+                `<span class="text-success small"><i class="bi bi-check-circle"></i> In Stock</span>` :
+                `<span class="text-danger small"><i class="bi bi-x-circle"></i> Out of Stock</span>`;
+
+            if (currentView === 'grid') {
+                html += `
+                    <div class="col-md-4 col-sm-6">
+                        <div class="card medicine-card h-100 border-0 shadow-sm">
+                            <div class="card-img-wrapper">
+                                <a href="/shop/${med.name}">
+                                    <img src="${med.image || '/assets/pharmacy_management/images/medicine-placeholder.svg'}" 
+                                         class="card-img-top" alt="${med.medicine_name}"
+                                         onerror="this.src='/assets/pharmacy_management/images/medicine-placeholder.svg'">
+                                </a>
+                                ${discount}
+                                <button class="wishlist-btn" onclick="toggleWishlist('${med.name}')">
+                                    <i class="bi bi-heart"></i>
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <a href="/shop/${med.name}" class="text-decoration-none">
+                                    <h6 class="card-title text-dark fw-semibold mb-1">${med.medicine_name}</h6>
+                                </a>
+                                <p class="text-muted small mb-2">${med.strength || ''} ${med.dosage_form || ''}</p>
+                                ${rx}
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <div>
+                                        <span class="fw-bold text-primary fs-5">₹${med.selling_rate || med.mrp}</span>
+                                        ${med.mrp > med.selling_rate ? `<small class="text-decoration-line-through text-muted ms-1">₹${med.mrp}</small>` : ''}
+                                    </div>
+                                    ${stockStatus}
+                                </div>
+                                <button class="btn btn-primary w-100 mt-2 add-to-cart-btn" 
+                                        onclick="addToCart('${med.name}')"
+                                        ${med.in_stock ? '' : 'disabled'}>
+                                    <i class="bi bi-cart-plus"></i> ${med.in_stock ? 'Add to Cart' : 'Out of Stock'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="col-12">
+                        <div class="card medicine-card-list border-0 shadow-sm mb-2">
+                            <div class="row g-0 align-items-center">
+                                <div class="col-auto p-3">
+                                    <img src="${med.image || '/assets/pharmacy_management/images/medicine-placeholder.svg'}" 
+                                         style="width:80px;height:80px;object-fit:contain;" alt="${med.medicine_name}">
+                                </div>
+                                <div class="col">
+                                    <div class="card-body">
+                                        <a href="/shop/${med.name}" class="text-decoration-none">
+                                            <h6 class="text-dark fw-semibold mb-1">${med.medicine_name}</h6>
+                                        </a>
+                                        <p class="text-muted small mb-0">${med.strength || ''} ${med.dosage_form || ''} | ${med.generic_name || ''}</p>
+                                        ${rx}
+                                    </div>
+                                </div>
+                                <div class="col-auto px-3 text-end">
+                                    <div class="fw-bold text-primary fs-5">₹${med.selling_rate || med.mrp}</div>
+                                    ${med.mrp > med.selling_rate ? `<small class="text-decoration-line-through text-muted">₹${med.mrp}</small>` : ''}
+                                    ${stockStatus}
+                                </div>
+                                <div class="col-auto pe-3">
+                                    <button class="btn btn-primary" onclick="addToCart('${med.name}')" ${med.in_stock ? '' : 'disabled'}>
+                                        <i class="bi bi-cart-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        if (data.medicines.length === 0) {
+            html = `
+                <div class="col-12 text-center py-5">
+                    <i class="bi bi-search-heart display-1 text-muted"></i>
+                    <h4 class="mt-3">No medicines found</h4>
+                    <p class="text-muted">Try adjusting your search or filters</p>
+                </div>
+            `;
+        }
+
+        $('#medicineGrid').html(html);
+        renderPagination(data.page, data.pages);
+    });
+}
+
+function renderPagination(current, total) {
+    if (total <= 1) {
+        $('#pagination').addClass('d-none');
+        return;
+    }
+    $('#pagination').removeClass('d-none');
+    let html = '';
+    if (current > 1) {
+        html += `<li class="page-item"><a class="page-link" href="#" onclick="goToPage(${current - 1})">‹</a></li>`;
+    }
+    for (let i = 1; i <= total; i++) {
+        if (i === current || i === 1 || i === total || Math.abs(i - current) <= 2) {
+            html += `<li class="page-item ${i === current ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="goToPage(${i})">${i}</a>
+            </li>`;
+        } else if (i === current - 3 || i === current + 3) {
+            html += `<li class="page-item disabled"><a class="page-link" href="#">...</a></li>`;
+        }
+    }
+    if (current < total) {
+        html += `<li class="page-item"><a class="page-link" href="#" onclick="goToPage(${current + 1})">›</a></li>`;
+    }
+    $('#pagination ul').html(html);
+}
+
+function goToPage(page) {
+    currentPage = page;
+    loadMedicines();
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function setView(view) {
+    currentView = view;
+    $('.btn-group .btn').removeClass('active');
+    $(`.btn-group .btn[onclick*="${view}"]`).addClass('active');
+    loadMedicines();
+}
+
+function applyFilters() {
+    currentPage = 1;
+    loadMedicines();
+}
+
+function clearFilters() {
+    $('#minPrice, #maxPrice').val('');
+    $('.filter-checkbox').prop('checked', false);
+    currentPage = 1;
+    loadMedicines();
+}
+
+function toggleFilters() {
+    $('#filterSidebar').toggleClass('d-none d-lg-block');
+}
+
+function addToCart(medicine) {
+    $.post('/api/method/pharmacy_management.api.cart.add_to_cart', {
+        medicine: medicine,
+        qty: 1
+    }, function(res) {
+        if (res.message.success) {
+            showToast('Added to cart!', 'success');
+            updateCartBadge();
+        }
+    }).fail(function(xhr) {
+        showToast(xhr.responseJSON?.message || 'Error adding to cart', 'danger');
+    });
+}
+
+function toggleWishlist(medicine) {
+    $.post('/api/method/pharmacy_management.api.wishlist.add_to_wishlist', {
+        medicine: medicine
+    }, function(res) {
+        if (res.message.success) {
+            showToast('Added to wishlist!', 'success');
+        }
+    });
+}
+
+function showToast(message, type = 'success') {
+    const toast = `
+        <div class="toast align-items-center text-bg-${type} border-0 position-fixed bottom-0 end-0 m-3" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `;
+    $('body').append(toast);
+    const el = $('.toast').last();
+    el.toast({delay: 3000}).toast('show');
+    setTimeout(() => el.remove(), 3500);
+}
+
+function updateCartBadge() {
+    $.get('/api/method/pharmacy_management.api.cart.get_cart_count', function(res) {
+        const count = res.message.count;
+        $('.cart-badge').text(count).toggleClass('d-none', count === 0);
+    });
+}
+
+$(document).click(function(e) {
+    if (!$(e.target).closest('.search-box').length) {
+        $('#searchSuggestions').addClass('d-none');
+    }
+});
+</script>
+{% endblock %}

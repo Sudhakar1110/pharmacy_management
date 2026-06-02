@@ -1,0 +1,293 @@
+{% extends "templates/pages/base.html" %}
+
+{% block title %}Pharmacy Management - Buy Medicines Online{% endblock %}
+
+{% block content %}
+<!-- Hero Banner -->
+<section class="hero-section bg-gradient-primary text-white">
+    <div class="container py-5">
+        <div class="row align-items-center min-vh-60">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-3">Your Health,<br>Our Priority</h1>
+                <p class="lead mb-4 opacity-90">Order authentic medicines online with fast home delivery. Upload prescription, save with discounts, and get free health advice.</p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="/shop" class="btn btn-light btn-lg px-4 fw-semibold">
+                        <i class="bi bi-cart3 me-2"></i>Shop Medicines
+                    </a>
+                    <a href="/prescriptions" class="btn btn-outline-light btn-lg px-4">
+                        <i class="bi bi-prescription2 me-2"></i>Upload Prescription
+                    </a>
+                </div>
+                <div class="row mt-4 g-3">
+                    <div class="col-4">
+                        <div class="text-center">
+                            <i class="bi bi-shield-check fs-3"></i>
+                            <small class="d-block">100% Authentic</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-center">
+                            <i class="bi bi-truck fs-3"></i>
+                            <small class="d-block">Free Delivery*</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-center">
+                            <i class="bi bi-currency-rupee fs-3"></i>
+                            <small class="d-block">Best Prices</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center d-none d-lg-block">
+                <img src="/assets/pharmacy_management/images/hero-pharmacy.svg" alt="Pharmacy" class="img-fluid" style="max-height: 400px;"
+                     onerror="this.style.display='none'">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Search Section -->
+<section class="search-section bg-white shadow-sm py-4">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="bi bi-search text-primary"></i>
+                    </span>
+                    <input type="text" id="homeSearch" class="form-control border-start-0" 
+                           placeholder="Search for medicines (e.g., Paracetamol, Amoxicillin...)" 
+                           onkeypress="if(event.key==='Enter') searchMedicine()">
+                    <button class="btn btn-primary px-4" onclick="searchMedicine()">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
+                <div class="mt-2 text-center">
+                    <small class="text-muted">Popular: </small>
+                    <a href="/shop?query=Paracetamol" class="badge bg-light text-dark text-decoration-none me-1">Paracetamol</a>
+                    <a href="/shop?query=Amoxicillin" class="badge bg-light text-dark text-decoration-none me-1">Amoxicillin</a>
+                    <a href="/shop?query=Vitamin" class="badge bg-light text-dark text-decoration-none me-1">Vitamins</a>
+                    <a href="/shop?query=Azithromycin" class="badge bg-light text-dark text-decoration-none me-1">Azithromycin</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Shop by Category -->
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold">Shop by Category</h3>
+            <a href="/shop" class="btn btn-outline-primary btn-sm">View All <i class="bi bi-arrow-right"></i></a>
+        </div>
+        <div class="row g-3">
+            {% for cat in categories %}
+            <div class="col-md-3 col-6">
+                <a href="/shop?category={{ cat.name }}" class="text-decoration-none">
+                    <div class="card category-card border-0 shadow-sm text-center p-4 h-100">
+                        <div class="category-icon mb-3">
+                            <i class="bi bi-{% if cat.category_name == 'Tablet' %}capsule{% elif cat.category_name == 'Syrup' %}droplet{% elif cat.category_name == 'Injection' %}syringe{% else %}heart-pulse{% endif %} fs-1"></i>
+                        </div>
+                        <h6 class="fw-semibold mb-1">{{ cat.category_name }}</h6>
+                        <small class="text-muted">{{ cat.medicine_count }} items</small>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Featured Medicines -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold">Featured Medicines</h3>
+            <a href="/shop" class="btn btn-outline-primary btn-sm">View All <i class="bi bi-arrow-right"></i></a>
+        </div>
+        <div class="row g-3" id="featuredMedicines">
+            <div class="col-12 text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Why Choose Us -->
+<section class="py-5">
+    <div class="container">
+        <h3 class="fw-bold text-center mb-5">Why Choose Us</h3>
+        <div class="row g-4">
+            <div class="col-md-3 col-6">
+                <div class="card border-0 text-center h-100">
+                    <div class="card-body">
+                        <div class="feature-icon mb-3 mx-auto">
+                            <i class="bi bi-patch-check-fill fs-2 text-primary"></i>
+                        </div>
+                        <h6 class="fw-semibold">100% Authentic</h6>
+                        <small class="text-muted">Genuine medicines from licensed manufacturers</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card border-0 text-center h-100">
+                    <div class="card-body">
+                        <div class="feature-icon mb-3 mx-auto">
+                            <i class="bi bi-truck fs-2 text-success"></i>
+                        </div>
+                        <h6 class="fw-semibold">Fast Delivery</h6>
+                        <small class="text-muted">Free delivery on orders above ₹500</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card border-0 text-center h-100">
+                    <div class="card-body">
+                        <div class="feature-icon mb-3 mx-auto">
+                            <i class="bi bi-shield-lock fs-2 text-warning"></i>
+                        </div>
+                        <h6 class="fw-semibold">Secure Payments</h6>
+                        <small class="text-muted">100% secure & encrypted payments</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="card border-0 text-center h-100">
+                    <div class="card-body">
+                        <div class="feature-icon mb-3 mx-auto">
+                            <i class="bi bi-telephone fs-2 text-danger"></i>
+                        </div>
+                        <h6 class="fw-semibold">24/7 Support</h6>
+                        <small class="text-muted">Dedicated pharmacist support</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Prescription Upload CTA -->
+<section class="py-5 bg-gradient-primary text-white">
+    <div class="container text-center">
+        <h3 class="fw-bold mb-3">Have a Prescription?</h3>
+        <p class="lead mb-4">Upload your prescription and we'll deliver the medicines to your doorstep</p>
+        <a href="/prescriptions" class="btn btn-light btn-lg px-5">
+            <i class="bi bi-upload me-2"></i>Upload Prescription
+        </a>
+    </div>
+</section>
+
+<!-- Newsletter -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6 text-center">
+                <h4 class="fw-bold mb-2">Stay Updated</h4>
+                <p class="text-muted mb-4">Get health tips, offers, and medicine reminders</p>
+                <div class="input-group input-group-lg">
+                    <input type="email" class="form-control" placeholder="Enter your email" id="newsletterEmail">
+                    <button class="btn btn-primary px-4" onclick="subscribeNewsletter()">Subscribe</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+function searchMedicine() {
+    const query = $('#homeSearch').val().trim();
+    if (query) {
+        window.location.href = `/shop?query=${encodeURIComponent(query)}`;
+    } else {
+        window.location.href = '/shop';
+    }
+}
+
+function subscribeNewsletter() {
+    const email = $('#newsletterEmail').val().trim();
+    if (!email) {
+        showToast('Please enter your email', 'warning');
+        return;
+    }
+    showToast('Subscribed successfully!', 'success');
+    $('#newsletterEmail').val('');
+}
+
+$(document).ready(function() {
+    $.get('/api/method/pharmacy_management.api.medicine.get_featured_medicines', function(res) {
+        const medicines = res.message;
+        let html = '';
+        medicines.forEach(function(med) {
+            const discount = med.discount_percent > 0 ? 
+                `<span class="discount-badge">${med.discount_percent}% OFF</span>` : '';
+            const rx = med.requires_prescription ? 
+                `<span class="badge bg-warning text-dark small">Rx</span>` : '';
+            html += `
+                <div class="col-md-3 col-sm-6">
+                    <div class="card medicine-card h-100 border-0 shadow-sm">
+                        <div class="card-img-wrapper">
+                            <a href="/shop/${med.name}">
+                                <img src="${med.image || '/assets/pharmacy_management/images/medicine-placeholder.svg'}" 
+                                     class="card-img-top" alt="${med.medicine_name}"
+                                     onerror="this.src='/assets/pharmacy_management/images/medicine-placeholder.svg'">
+                            </a>
+                            ${discount}
+                        </div>
+                        <div class="card-body">
+                            <a href="/shop/${med.name}" class="text-decoration-none">
+                                <h6 class="card-title text-dark fw-semibold mb-1">${med.medicine_name}</h6>
+                            </a>
+                            <p class="text-muted small mb-2">${med.strength || ''} ${med.dosage_form || ''}</p>
+                            ${rx}
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span class="fw-bold text-primary fs-5">₹${med.selling_rate || med.mrp}</span>
+                                ${med.mrp > (med.selling_rate || med.mrp) ? 
+                                    `<small class="text-decoration-line-through text-muted">₹${med.mrp}</small>` : ''}
+                            </div>
+                            <button class="btn btn-primary w-100 mt-2" 
+                                    onclick="addToCartDirect('${med.name}')"
+                                    ${med.in_stock ? '' : 'disabled'}>
+                                <i class="bi bi-cart-plus"></i> ${med.in_stock ? 'Add to Cart' : 'Out of Stock'}
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+        });
+        if (medicines.length === 0) {
+            html = '<div class="col-12 text-center"><p class="text-muted">No featured medicines available</p></div>';
+        }
+        $('#featuredMedicines').html(html);
+    });
+});
+
+function addToCartDirect(medicine) {
+    $.post('/api/method/pharmacy_management.api.cart.add_to_cart', {
+        medicine: medicine,
+        qty: 1
+    }, function(res) {
+        if (res.message.success) {
+            showToast('Added to cart!', 'success');
+            updateCartBadge();
+        }
+    }).fail(function(xhr) {
+        showToast(xhr.responseJSON?.message || 'Error', 'danger');
+    });
+}
+
+function showToast(message, type) {
+    const toast = $(`
+        <div class="toast align-items-center text-bg-${type} border-0 position-fixed bottom-0 end-0 m-3" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `);
+    $('body').append(toast);
+    toast.toast({delay: 3000}).toast('show');
+    setTimeout(() => toast.remove(), 3500);
+}
+</script>
+{% endblock %}

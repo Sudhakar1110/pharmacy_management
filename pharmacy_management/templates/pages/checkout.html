@@ -1,0 +1,466 @@
+{% extends "templates/pages/base.html" %}
+
+{% block title %}Checkout - Pharmacy Management{% endblock %}
+
+{% block content %}
+<div class="checkout-page">
+    <div class="container py-4">
+        <h2 class="fw-bold mb-4"><i class="bi bi-credit-card"></i> Checkout</h2>
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <form id="checkoutForm">
+                    <!-- Delivery Address -->
+                    <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-3"><i class="bi bi-geo-alt"></i> Delivery Address</h5>
+                            <div id="addressSection">
+                                <div class="text-center py-3">
+                                    <div class="spinner-border text-primary" role="status"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Prescription Upload -->
+                    <div class="card border-0 shadow-sm mb-3" id="prescriptionSection" style="display:none;">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-3"><i class="bi bi-prescription2"></i> Upload Prescription</h5>
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i> Some medicines in your cart require a valid prescription.
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Upload Prescription Image (JPG, PNG, PDF)</label>
+                                <input type="file" class="form-control" id="prescriptionUpload" accept="image/*,.pdf">
+                                <div id="prescriptionPreview" class="mt-2 d-none">
+                                    <img id="prescriptionImg" class="img-thumbnail" style="max-height:200px;">
+                                </div>
+                                <small class="text-muted">You can also upload later in your orders page</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Notes for Pharmacist</label>
+                                <textarea class="form-control" id="orderNotes" rows="2" 
+                                          placeholder="Any instructions for the pharmacist..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Method -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-3"><i class="bi bi-credit-card"></i> Payment Method</h5>
+                            <div id="paymentOptions">
+                                <div class="text-center py-3">
+                                    <div class="spinner-border text-primary" role="status"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success btn-lg w-100 mt-3" id="placeOrderBtn">
+                        <i class="bi bi-shield-check"></i> Place Order
+                    </button>
+                </form>
+            </div>
+
+            <!-- Order Summary Sidebar -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm sticky-cart">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3">Order Summary</h5>
+                        <div id="checkoutSummary">
+                            <div class="text-center py-3">
+                                <div class="spinner-border text-primary" role="status"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Address Modal -->
+<div class="modal fade" id="addAddressModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Address</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addressForm">
+                    <div class="mb-3">
+                        <label class="form-label">Address Line 1 *</label>
+                        <input type="text" id="addrLine1" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address Line 2</label>
+                        <input type="text" id="addrLine2" class="form-control">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label">City *</label>
+                            <input type="text" id="addrCity" class="form-control" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">State *</label>
+                            <input type="text" id="addrState" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Pincode *</label>
+                        <input type="text" id="addrPincode" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" id="addrPhone" class="form-control">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveNewAddress()">Save Address</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Complete Payment</h5>
+            </div>
+            <div class="modal-body text-center py-4" id="paymentModalBody">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2">Processing payment...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+let selectedAddress = null;
+let selectedPayment = 'COD';
+let uploadedPrescription = null;
+
+$(document).ready(function() {
+    loadCheckoutData();
+});
+
+function loadCheckoutData() {
+    $.get('/api/method/pharmacy_management.api.checkout.get_checkout_summary', function(res) {
+        const data = res.message;
+        
+        // Load addresses
+        renderAddresses(data.addresses);
+        renderPaymentOptions();
+        renderCheckoutSummary(data.cart);
+        
+        // Check if prescription needed
+        if (data.cart.requires_prescription) {
+            $('#prescriptionSection').show();
+        }
+    }).fail(function(xhr) {
+        if (xhr.status === 400 || xhr.status === 500) {
+            window.location.href = '/cart';
+        }
+    });
+}
+
+function renderAddresses(addresses) {
+    if (addresses.length > 0) {
+        let html = '<div class="row g-2">';
+        addresses.forEach(function(addr) {
+            const checked = addr.is_shipping ? 'checked' : '';
+            html += `
+                <div class="col-12">
+                    <div class="form-check address-card p-3 border rounded ${addr.is_shipping ? 'border-primary' : ''}">
+                        <input class="form-check-input" type="radio" name="address" 
+                               value="${addr.name}" ${checked}
+                               onchange="selectAddress('${addr.name}')">
+                        <label class="form-check-label w-100">
+                            <strong>${addr.address_line1}</strong>
+                            ${addr.address_line2 ? `<br>${addr.address_line2}` : ''}
+                            <br>${addr.city}, ${addr.state} - ${addr.pincode}
+                            ${addr.phone ? `<br><small class="text-muted">Phone: ${addr.phone}</small>` : ''}
+                        </label>
+                    </div>
+                </div>`;
+            if (addr.is_shipping) selectedAddress = addr.name;
+        });
+        html += `
+            <div class="col-12 mt-2">
+                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+                    <i class="bi bi-plus-lg"></i> Add New Address
+                </button>
+            </div>
+        </div>`;
+        $('#addressSection').html(html);
+        if (!selectedAddress && addresses.length > 0) {
+            selectedAddress = addresses[0].name;
+        }
+    } else {
+        $('#addressSection').html(`
+            <div class="text-center py-3">
+                <p class="text-muted">No addresses found. Please add one.</p>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+                    <i class="bi bi-plus-lg"></i> Add Address
+                </button>
+            </div>
+        `);
+    }
+}
+
+function selectAddress(name) {
+    selectedAddress = name;
+    $('.address-card').removeClass('border-primary');
+    $(`input[value="${name}"]`).closest('.address-card').addClass('border-primary');
+}
+
+function saveNewAddress() {
+    const data = {
+        address_line1: $('#addrLine1').val(),
+        address_line2: $('#addrLine2').val(),
+        city: $('#addrCity').val(),
+        state: $('#addrState').val(),
+        pincode: $('#addrPincode').val(),
+        phone: $('#addrPhone').val(),
+        is_shipping: 1
+    };
+    
+    if (!data.address_line1 || !data.city || !data.state || !data.pincode) {
+        showToast('Please fill in all required fields', 'warning');
+        return;
+    }
+    
+    $.post('/api/method/pharmacy_management.api.customer.save_address', data, function(res) {
+        if (res.message.success) {
+            $('#addAddressModal').modal('hide');
+            showToast('Address added!', 'success');
+            loadCheckoutData();
+        }
+    }).fail(function(xhr) {
+        showToast(xhr.responseJSON?.message || 'Error saving address', 'danger');
+    });
+}
+
+function renderPaymentOptions() {
+    const options = [
+        {id: 'COD', name: 'Cash on Delivery', icon: 'bi-cash', desc: 'Pay when you receive'},
+        {id: 'UPI', name: 'UPI (GPay, Paytm, PhonePe)', icon: 'bi-phone', desc: 'Pay via UPI app'},
+        {id: 'Razorpay', name: 'Card / Net Banking / UPI', icon: 'bi-credit-card-2-front', desc: 'Secure online payment'},
+    ];
+    
+    let html = '<div class="row g-2">';
+    options.forEach(function(opt) {
+        const checked = opt.id === 'COD' ? 'checked' : '';
+        html += `
+            <div class="col-12">
+                <div class="form-check payment-card p-3 border rounded ${checked ? 'border-primary' : ''}">
+                    <input class="form-check-input" type="radio" name="payment" 
+                           value="${opt.id}" ${checked}
+                           onchange="selectPayment('${opt.id}')">
+                    <label class="form-check-label w-100">
+                        <div class="d-flex align-items-center">
+                            <i class="bi ${opt.icon} fs-4 me-2"></i>
+                            <div>
+                                <strong>${opt.name}</strong>
+                                <br><small class="text-muted">${opt.desc}</small>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>`;
+    });
+    html += '</div>';
+    $('#paymentOptions').html(html);
+    selectedPayment = 'COD';
+}
+
+function selectPayment(method) {
+    selectedPayment = method;
+    $('.payment-card').removeClass('border-primary');
+    $(`input[value="${method}"]`).closest('.payment-card').addClass('border-primary');
+}
+
+function renderCheckoutSummary(cart) {
+    let html = `
+        <div class="mb-3">
+            ${cart.items.slice(0, 3).map(function(item) {
+                return `<div class="d-flex justify-content-between mb-2">
+                    <small>${item.medicine_name} x${item.qty}</small>
+                    <small class="fw-semibold">₹${item.amount.toFixed(2)}</small>
+                </div>`;
+            }).join('')}
+            ${cart.items.length > 3 ? `<small class="text-muted">+${cart.items.length - 3} more items</small>` : ''}
+        </div>
+        <hr>
+        <div class="d-flex justify-content-between mb-2">
+            <span>Subtotal</span>
+            <span>₹${cart.subtotal.toFixed(2)}</span>
+        </div>
+        ${cart.coupon_discount > 0 ? `
+        <div class="d-flex justify-content-between mb-2 text-success">
+            <span>Discount</span>
+            <span>-₹${cart.coupon_discount.toFixed(2)}</span>
+        </div>` : ''}
+        <div class="d-flex justify-content-between mb-2">
+            <span>Shipping</span>
+            <span>${cart.shipping === 0 ? '<span class="text-success">FREE</span>' : '₹' + cart.shipping.toFixed(2)}</span>
+        </div>
+        <hr>
+        <div class="d-flex justify-content-between mb-0">
+            <span class="fw-bold fs-5">Total</span>
+            <span class="fw-bold fs-5 text-primary">₹${cart.grand_total.toFixed(2)}</span>
+        </div>`;
+    
+    $('#checkoutSummary').html(html);
+}
+
+// Prescription upload
+$('#prescriptionUpload').on('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('File too large. Max 5MB.', 'warning');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        uploadedPrescription = e.target.result.split(',')[1]; // Base64
+        $('#prescriptionPreview').removeClass('d-none');
+        $('#prescriptionImg').attr('src', e.target.result);
+    };
+    reader.readAsDataURL(file);
+});
+
+// Place order
+$('#checkoutForm').on('submit', function(e) {
+    e.preventDefault();
+    const btn = $('#placeOrderBtn');
+    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Placing Order...');
+    
+    if (!selectedAddress) {
+        showToast('Please select a delivery address', 'warning');
+        btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order');
+        return;
+    }
+    
+    // First upload prescription if needed
+    function doPlaceOrder() {
+        const orderData = {
+            address_name: selectedAddress,
+            payment_method: selectedPayment,
+            notes: $('#orderNotes').val(),
+        };
+        
+        // If prescription was uploaded
+        if ($('#prescriptionSection').is(':visible') && uploadedPrescription) {
+            // Upload prescription first
+            $.post('/api/method/pharmacy_management.api.prescription.upload_prescription', {
+                image: uploadedPrescription,
+                notes: $('#orderNotes').val()
+            }, function(rxRes) {
+                if (rxRes.message.success) {
+                    orderData.prescription_ref = rxRes.message.prescription_id;
+                }
+                createOrder(orderData);
+            }).fail(function() {
+                createOrder(orderData);
+            });
+        } else {
+            createOrder(orderData);
+        }
+    }
+    
+    doPlaceOrder();
+});
+
+function createOrder(data) {
+    $.post('/api/method/pharmacy_management.api.checkout.create_order', data, function(res) {
+        const result = res.message;
+        if (result.success) {
+            if (result.payment_required && result.payment_data) {
+                // Show payment modal
+                $('#paymentModal').modal('show');
+                initiatePayment(result);
+            } else {
+                // Order placed (COD)
+                window.location.href = `/track-order/${result.order_id}?success=1`;
+            }
+        }
+    }).fail(function(xhr) {
+        const btn = $('#placeOrderBtn');
+        btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order');
+        showToast(xhr.responseJSON?.message || 'Error placing order', 'danger');
+    });
+}
+
+function initiatePayment(orderResult) {
+    const pd = orderResult.payment_data;
+    
+    if (pd.gateway === 'razorpay') {
+        const options = {
+            key: pd.key_id,
+            amount: pd.amount,
+            currency: pd.currency || 'INR',
+            name: 'Pharmacy Management',
+            description: `Order ${pd.order_id}`,
+            order_id: pd.razorpay_order_id,
+            prefill: pd.prefill,
+            theme: pd.theme,
+            handler: function(response) {
+                $.post('/api/method/pharmacy_management.api.checkout.verify_payment', {
+                    order_id: pd.order_id,
+                    payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    payment_method: 'Razorpay'
+                }, function() {
+                    window.location.href = `/track-order/${pd.order_id}?success=1`;
+                });
+            },
+            modal: {
+                ondismiss: function() {
+                    $('#paymentModal').modal('hide');
+                    showToast('Payment cancelled. You can retry from your orders page.', 'info');
+                }
+            }
+        };
+        const rzp = new Razorpay(options);
+        rzp.open();
+    } else if (pd.gateway === 'stripe') {
+        // Stripe integration
+        $('#paymentModalBody').html(`
+            <i class="bi bi-credit-card display-1 text-primary"></i>
+            <h5 class="mt-3">Stripe Payment</h5>
+            <p>Amount: ₹${(pd.amount / 100).toFixed(2)}</p>
+            <div id="stripeCard" class="mt-3"></div>
+        `);
+    } else {
+        // COD / UPI - fallback
+        window.location.href = `/track-order/${pd.order_id}?success=1`;
+    }
+}
+
+function showToast(message, type) {
+    const toast = $(`
+        <div class="toast align-items-center text-bg-${type} border-0 position-fixed bottom-0 end-0 m-3" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `);
+    $('body').append(toast);
+    toast.toast({delay: 3000}).toast('show');
+    setTimeout(() => toast.remove(), 3500);
+}
+</script>
+{% endblock %}

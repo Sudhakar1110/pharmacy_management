@@ -1,0 +1,155 @@
+{% extends "templates/pages/base.html" %}
+
+{% block title %}My Account - Pharmacy Management{% endblock %}
+
+{% block content %}
+<div class="account-page">
+    <div class="container py-4">
+        <h2 class="fw-bold mb-4"><i class="bi bi-person-circle"></i> My Account</h2>
+        
+        <div class="row g-4">
+            <div class="col-lg-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-3">
+                        <div class="nav flex-column nav-pills" role="tablist">
+                            <a class="nav-link active" href="/my-account">
+                                <i class="bi bi-person-circle me-2"></i> Profile
+                            </a>
+                            <a class="nav-link" href="/my-orders">
+                                <i class="bi bi-box me-2"></i> Orders
+                            </a>
+                            <a class="nav-link" href="/my-addresses">
+                                <i class="bi bi-geo-alt me-2"></i> Addresses
+                            </a>
+                            <a class="nav-link" href="/my-prescriptions">
+                                <i class="bi bi-prescription2 me-2"></i> Prescriptions
+                            </a>
+                            <a class="nav-link" href="/my-wishlist">
+                                <i class="bi bi-heart me-2"></i> Wishlist
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-9" id="profileContent">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+$(document).ready(function() {
+    loadProfile();
+});
+
+function loadProfile() {
+    $.get('/api/method/pharmacy_management.api.customer.get_customer_profile', function(res) {
+        const data = res.message;
+        
+        let patientInfo = '';
+        if (data.patient) {
+            patientInfo = `
+                <div class="row g-3 mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Date of Birth</label>
+                        <input type="date" id="editDob" class="form-control" value="${data.patient.date_of_birth || ''}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Gender</label>
+                        <select id="editGender" class="form-select">
+                            <option value="">Select</option>
+                            <option value="Male" ${data.patient.gender === 'Male' ? 'selected' : ''}>Male</option>
+                            <option value="Female" ${data.patient.gender === 'Female' ? 'selected' : ''}>Female</option>
+                            <option value="Other" ${data.patient.gender === 'Other' ? 'selected' : ''}>Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Blood Group</label>
+                        <select id="editBloodGroup" class="form-select">
+                            <option value="">Select</option>
+                            <option value="A+" ${data.patient.blood_group === 'A+' ? 'selected' : ''}>A+</option>
+                            <option value="A-" ${data.patient.blood_group === 'A-' ? 'selected' : ''}>A-</option>
+                            <option value="B+" ${data.patient.blood_group === 'B+' ? 'selected' : ''}>B+</option>
+                            <option value="B-" ${data.patient.blood_group === 'B-' ? 'selected' : ''}>B-</option>
+                            <option value="O+" ${data.patient.blood_group === 'O+' ? 'selected' : ''}>O+</option>
+                            <option value="O-" ${data.patient.blood_group === 'O-' ? 'selected' : ''}>O-</option>
+                            <option value="AB+" ${data.patient.blood_group === 'AB+' ? 'selected' : ''}>AB+</option>
+                            <option value="AB-" ${data.patient.blood_group === 'AB-' ? 'selected' : ''}>AB-</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-3 p-3 bg-light rounded">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <small class="text-muted">Loyalty Points</small>
+                            <h5 class="fw-bold text-primary mb-0">${data.patient.loyalty_points || 0}</h5>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Total Spent</small>
+                            <h5 class="fw-bold text-success mb-0">₹${(data.total_spent || 0).toFixed(2)}</h5>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        
+        const html = `
+            <h5 class="fw-bold mb-4">Profile Information</h5>
+            <form id="profileForm">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" id="editName" class="form-control" value="${data.full_name}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" value="${data.email}" readonly disabled>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Mobile</label>
+                        <input type="text" id="editMobile" class="form-control" value="${data.mobile}">
+                    </div>
+                </div>
+                ${patientInfo}
+                <button type="submit" class="btn btn-primary mt-4">
+                    <i class="bi bi-check-lg"></i> Update Profile
+                </button>
+            </form>
+            <div class="mt-3 p-3 bg-light rounded">
+                <small class="text-muted">Total Orders: <strong>${data.total_orders || 0}</strong></small>
+            </div>`;
+        
+        $('#profileContent').html(html);
+    });
+}
+
+$(document).on('submit', '#profileForm', function(e) {
+    e.preventDefault();
+    const btn = $(this).find('button[type="submit"]');
+    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Saving...');
+    
+    $.post('/api/method/pharmacy_management.api.customer.update_profile', {
+        full_name: $('#editName').val(),
+        mobile: $('#editMobile').val(),
+        date_of_birth: $('#editDob').val(),
+        gender: $('#editGender').val(),
+        blood_group: $('#editBloodGroup').val()
+    }, function(res) {
+        if (res.message.success) {
+            showToast('Profile updated!', 'success');
+        }
+    }).always(function() {
+        btn.prop('disabled', false).html('<i class="bi bi-check-lg"></i> Update Profile');
+    });
+});
+</script>
+{% endblock %}

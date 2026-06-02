@@ -1,0 +1,168 @@
+{% extends "templates/pages/base.html" %}
+
+{% block title %}Upload Prescription - Pharmacy Management{% endblock %}
+
+{% block content %}
+<div class="prescription-upload-page">
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h2 class="fw-bold mb-2"><i class="bi bi-prescription2"></i> Upload Prescription</h2>
+                <p class="text-muted mb-4">Upload your prescription and our pharmacists will verify it. We'll deliver the prescribed medicines to your doorstep.</p>
+                
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <form id="rxUploadForm">
+                            <!-- Upload Area -->
+                            <div class="upload-area border-2 border-dashed rounded-3 p-5 text-center mb-4" 
+                                 onclick="$('#rxFileInput').click()"
+                                 ondragover="event.preventDefault()"
+                                 ondrop="handleDrop(event)">
+                                <i class="bi bi-cloud-arrow-up display-3 text-primary"></i>
+                                <h5 class="mt-3">Drop your prescription here</h5>
+                                <p class="text-muted mb-3">or click to browse (JPG, PNG, PDF - Max 5MB)</p>
+                                <input type="file" id="rxFileInput" class="d-none" accept="image/*,.pdf" onchange="handleFileSelect(event)">
+                                <button type="button" class="btn btn-primary">
+                                    <i class="bi bi-upload"></i> Choose File
+                                </button>
+                                <p id="fileName" class="mt-2 d-none text-success"></p>
+                            </div>
+
+                            <!-- Preview -->
+                            <div id="uploadPreview" class="d-none mb-4">
+                                <img id="previewImage" class="img-fluid rounded" style="max-height: 300px;">
+                            </div>
+
+                            <!-- Order Link -->
+                            <div class="mb-3">
+                                <label class="form-label">Link to Existing Order (Optional)</label>
+                                <input type="text" id="orderLink" class="form-control" placeholder="Enter Order ID">
+                            </div>
+
+                            <!-- Notes -->
+                            <div class="mb-4">
+                                <label class="form-label">Notes for Pharmacist</label>
+                                <textarea id="rxNotes" class="form-control" rows="3" 
+                                          placeholder="Any specific instructions or notes for the pharmacist..."></textarea>
+                            </div>
+
+                            <!-- Submit -->
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg" id="rxSubmitBtn">
+                                    <i class="bi bi-send-check"></i> Submit Prescription
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Info Cards -->
+                <div class="row g-3 mt-4">
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-light text-center p-3 h-100">
+                            <i class="bi bi-shield-check fs-2 text-primary"></i>
+                            <h6 class="mt-2 fw-semibold">Secure Upload</h6>
+                            <small class="text-muted">Your prescription data is encrypted and secure</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-light text-center p-3 h-100">
+                            <i class="bi bi-clock-history fs-2 text-success"></i>
+                            <h6 class="mt-2 fw-semibold">Quick Verification</h6>
+                            <small class="text-muted">Our pharmacists verify within 2-4 hours</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-light text-center p-3 h-100">
+                            <i class="bi bi-truck fs-2 text-warning"></i>
+                            <h6 class="mt-2 fw-semibold">Fast Delivery</h6>
+                            <small class="text-muted">Medicines delivered within 2-3 days</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+let selectedFile = null;
+let uploadedBase64 = null;
+
+function handleDrop(event) {
+    event.preventDefault();
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+        processFile(files[0]);
+    }
+}
+
+function handleFileSelect(event) {
+    if (event.target.files.length > 0) {
+        processFile(event.target.files[0]);
+    }
+}
+
+function processFile(file) {
+    if (!file.type.match('image.*') && file.type !== 'application/pdf') {
+        showToast('Please upload an image or PDF', 'warning');
+        return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('File too large. Max 5MB.', 'warning');
+        return;
+    }
+    
+    selectedFile = file;
+    $('#fileName').text(`📄 ${file.name}`).removeClass('d-none');
+    
+    if (file.type.match('image.*')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            uploadedBase64 = e.target.result.split(',')[1];
+            $('#previewImage').attr('src', e.target.result);
+            $('#uploadPreview').removeClass('d-none');
+        };
+        reader.readAsDataURL(file);
+    } else {
+        uploadedBase64 = 'pdf_upload';
+        $('#uploadPreview').addClass('d-none');
+    }
+}
+
+$('#rxUploadForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    if (!uploadedBase64) {
+        showToast('Please select a prescription file', 'warning');
+        return;
+    }
+    
+    const btn = $('#rxSubmitBtn');
+    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Submitting...');
+    
+    const data = {
+        image: uploadedBase64.startsWith('pdf_') ? '' : uploadedBase64,
+        notes: $('#rxNotes').val(),
+        order_id: $('#orderLink').val() || undefined
+    };
+    
+    $.post('/api/method/pharmacy_management.api.prescription.upload_prescription', data, function(res) {
+        if (res.message.success) {
+            showToast('Prescription submitted! We\'ll notify you once verified.', 'success');
+            $('#rxUploadForm')[0].reset();
+            $('#uploadPreview').addClass('d-none');
+            $('#fileName').addClass('d-none');
+            selectedFile = null;
+            uploadedBase64 = null;
+        }
+    }).fail(function(xhr) {
+        showToast(xhr.responseJSON?.message || 'Error uploading prescription', 'danger');
+    }).always(function() {
+        btn.prop('disabled', false).html('<i class="bi bi-send-check"></i> Submit Prescription');
+    });
+});
+</script>
+{% endblock %}

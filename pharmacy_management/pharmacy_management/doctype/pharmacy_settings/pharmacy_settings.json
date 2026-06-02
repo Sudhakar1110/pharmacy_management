@@ -1,0 +1,51 @@
+{
+  "doctype": "DocType",
+  "name": "Pharmacy Settings",
+  "module": "Pharmacy Management",
+  "is_single": 1,
+  "is_virtual": 0,
+  "editable_grid": 1,
+  "track_changes": 1,
+  "fields": [
+    {"fieldname": "section_ecommerce", "fieldtype": "Section Break", "label": "E-Commerce Settings"},
+    {"fieldname": "website_name", "fieldtype": "Data", "label": "Website Name", "default": "Pharmacy Management"},
+    {"fieldname": "free_shipping_threshold", "fieldtype": "Currency", "label": "Free Shipping Threshold", "default": "500"},
+    {"fieldname": "shipping_charge", "fieldtype": "Currency", "label": "Standard Shipping Charge", "default": "49"},
+    {"fieldname": "default_warehouse", "fieldtype": "Link", "label": "Default Warehouse", "options": "Warehouse"},
+    {"fieldname": "max_order_qty", "fieldtype": "Int", "label": "Max Order Quantity Per Item", "default": "10"},
+    {"fieldname": "enable_guest_checkout", "fieldtype": "Check", "label": "Enable Guest Checkout", "default": 0},
+    
+    {"fieldname": "section_razorpay", "fieldtype": "Section Break", "label": "Razorpay"},
+    {"fieldname": "razorpay_key_id", "fieldtype": "Data", "label": "Razorpay Key ID"},
+    {"fieldname": "razorpay_key_secret", "fieldtype": "Password", "label": "Razorpay Key Secret"},
+    
+    {"fieldname": "section_stripe", "fieldtype": "Section Break", "label": "Stripe"},
+    {"fieldname": "stripe_publishable_key", "fieldtype": "Data", "label": "Stripe Publishable Key"},
+    {"fieldname": "stripe_secret_key", "fieldtype": "Password", "label": "Stripe Secret Key"},
+    
+    {"fieldname": "section_phonepe", "fieldtype": "Section Break", "label": "PhonePe"},
+    {"fieldname": "phonepe_merchant_id", "fieldtype": "Data", "label": "Merchant ID"},
+    {"fieldname": "phonepe_api_key", "fieldtype": "Password", "label": "API Key"},
+    {"fieldname": "phonepe_merchant_user_id", "fieldtype": "Data", "label": "Merchant User ID"},
+    
+    {"fieldname": "section_smtp", "fieldtype": "Section Break", "label": "Email Notifications"},
+    {"fieldname": "send_order_confirmation", "fieldtype": "Check", "label": "Send Order Confirmation Email", "default": 1},
+    {"fieldname": "send_shipping_updates", "fieldtype": "Check", "label": "Send Shipping Updates", "default": 1},
+    
+    {"fieldname": "section_seo", "fieldtype": "Section Break", "label": "SEO"},
+    {"fieldname": "meta_title", "fieldtype": "Data", "label": "Default Meta Title"},
+    {"fieldname": "meta_description", "fieldtype": "Small Text", "label": "Default Meta Description"},
+    {"fieldname": "meta_keywords", "fieldtype": "Data", "label": "Default Meta Keywords"},
+    
+    {"fieldname": "section_footer", "fieldtype": "Section Break", "label": "Footer"},
+    {"fieldname": "footer_about", "fieldtype": "Small Text", "label": "About Text"},
+    {"fieldname": "footer_phone", "fieldtype": "Data", "label": "Phone"},
+    {"fieldname": "footer_email", "fieldtype": "Data", "label": "Email"},
+    {"fieldname": "footer_address", "fieldtype": "Small Text", "label": "Address"},
+    {"fieldname": "working_hours", "fieldtype": "Data", "label": "Working Hours", "default": "Mon-Sat: 9:00 AM - 9:00 PM"}
+  ],
+  "permissions": [
+    {"create": 1, "delete": 1, "read": 1, "write": 1, "role": "System Manager"},
+    {"read": 1, "role": "Pharmacy Administrator"}
+  ]
+}

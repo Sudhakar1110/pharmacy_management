@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}Online Pharmacy - Buy Medicines Online at Best Prices. Fast Delivery, Authentic Products, Prescription Upload.{% endblock %}">
+    <meta name="keywords" content="pharmacy, online medicine, buy medicines, healthcare, medical store">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="{% block og_title %}Pharmacy Management - Buy Medicines Online{% endblock %}">
+    <meta property="og:description" content="Your trusted online pharmacy. Order medicines online with fast delivery.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ frappe.request.url }}">
+    
+    <!-- Canonical -->
+    <link rel="canonical" href="{{ frappe.request.url }}">
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/assets/pharmacy_management/css/pharmacy.css">
+    
+    <title>{% block title %}Pharmacy Management - Buy Medicines Online{% endblock %}</title>
+    
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <i class="bi bi-plus-circle-fill text-primary fs-3 me-2"></i>
+                <div>
+                    <span class="fw-bold fs-4">Pharmacy</span>
+                    <small class="d-block text-muted" style="font-size: 0.65rem; line-height: 1;">Your Trusted Online Medical Store</small>
+                </div>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link {% if frappe.form_dict and frappe.form_dict.get('page') == 'shop' %}active{% endif %}" href="/shop">
+                            <i class="bi bi-grid"></i> Shop
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person"></i> My Account
+                        </a>
+                        <ul class="dropdown-menu">
+                            {% if frappe.session.user and frappe.session.user != "Guest" %}
+                            <li><a class="dropdown-item" href="/my-account"><i class="bi bi-person-circle"></i> Profile</a></li>
+                            <li><a class="dropdown-item" href="/my-orders"><i class="bi bi-box"></i> Orders</a></li>
+                            <li><a class="dropdown-item" href="/my-addresses"><i class="bi bi-geo-alt"></i> Addresses</a></li>
+                            <li><a class="dropdown-item" href="/my-prescriptions"><i class="bi bi-prescription2"></i> Prescriptions</a></li>
+                            <li><a class="dropdown-item" href="/my-wishlist"><i class="bi bi-heart"></i> Wishlist</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/?cmd=logout"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                            {% else %}
+                            <li><a class="dropdown-item" href="/login#login"><i class="bi bi-box-arrow-in-right"></i> Login</a></li>
+                            <li><a class="dropdown-item" href="/login#signup"><i class="bi bi-person-plus"></i> Register</a></li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/prescriptions">
+                            <i class="bi bi-prescription"></i> Upload Rx
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/track-order">
+                            <i class="bi bi-truck"></i> Track Order
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="d-flex align-items-center gap-2">
+                    <a href="/my-wishlist" class="btn btn-outline-danger position-relative">
+                        <i class="bi bi-heart"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger wishlist-badge d-none">0</span>
+                    </a>
+                    <a href="/cart" class="btn btn-primary position-relative">
+                        <i class="bi bi-cart3"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger cart-badge d-none">0</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer bg-dark text-light mt-5">
+        <div class="container py-5">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-plus-circle-fill text-primary"></i> Pharmacy Management</h5>
+                    <p class="text-light opacity-75">Your trusted online pharmacy for authentic medicines, healthcare products, and wellness essentials. Fast delivery across India.</p>
+                    <div class="d-flex gap-2">
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle"><i class="bi bi-twitter-x"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle"><i class="bi bi-instagram"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-sm rounded-circle"><i class="bi bi-youtube"></i></a>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h6 class="fw-bold mb-3">Quick Links</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="/shop" class="text-light text-decoration-none opacity-75">Shop Medicines</a></li>
+                        <li class="mb-2"><a href="/prescriptions" class="text-light text-decoration-none opacity-75">Upload Prescription</a></li>
+                        <li class="mb-2"><a href="/track-order" class="text-light text-decoration-none opacity-75">Track Order</a></li>
+                        <li class="mb-2"><a href="/my-orders" class="text-light text-decoration-none opacity-75">My Orders</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h6 class="fw-bold mb-3">Categories</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="/shop?category=Tablet" class="text-light text-decoration-none opacity-75">Tablets</a></li>
+                        <li class="mb-2"><a href="/shop?category=Syrup" class="text-light text-decoration-none opacity-75">Syrups</a></li>
+                        <li class="mb-2"><a href="/shop?category=Injection" class="text-light text-decoration-none opacity-75">Injections</a></li>
+                        <li class="mb-2"><a href="/shop?category=Capsule" class="text-light text-decoration-none opacity-75">Capsules</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4">
+                    <h6 class="fw-bold mb-3">Contact Us</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2 text-light opacity-75"><i class="bi bi-geo-alt me-2"></i>123 Pharmacy Street, Medical Complex</li>
+                        <li class="mb-2 text-light opacity-75"><i class="bi bi-telephone me-2"></i>+91 00000 00000</li>
+                        <li class="mb-2 text-light opacity-75"><i class="bi bi-envelope me-2"></i>support@pharmacy.com</li>
+                        <li class="mb-2 text-light opacity-75"><i class="bi bi-clock me-2"></i>Mon-Sat: 9:00 AM - 9:00 PM</li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="border-light opacity-25">
+            <div class="row">
+                <div class="col-md-6 text-light opacity-50 small">
+                    &copy; {{ frappe.utils.nowdate().split('-')[0] }} Pharmacy Management. All rights reserved.
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="#" class="text-light text-decoration-none opacity-50 small me-3">Privacy Policy</a>
+                    <a href="#" class="text-light text-decoration-none opacity-50 small me-3">Terms of Service</a>
+                    <a href="#" class="text-light text-decoration-none opacity-50 small">Refund Policy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    
+    <!-- Razorpay SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="/assets/pharmacy_management/js/pharmacy.js"></script>
+    
+    {% block script %}{% endblock %}
+    
+    <script>
+    $(document).ready(function() {
+        updateCartBadge();
+        updateWishlistBadge();
+    });
+    
+    function updateCartBadge() {
+        $.get('/api/method/pharmacy_management.api.cart.get_cart_count', function(res) {
+            const count = res.message.count;
+            $('.cart-badge').text(count).toggleClass('d-none', count === 0);
+        });
+    }
+    
+    function updateWishlistBadge() {
+        $.get('/api/method/pharmacy_management.api.wishlist.get_wishlist', function(res) {
+            const count = res.message.wishlist.length;
+            $('.wishlist-badge').text(count).toggleClass('d-none', count === 0);
+        });
+    }
+    </script>
+</body>
+</html>
