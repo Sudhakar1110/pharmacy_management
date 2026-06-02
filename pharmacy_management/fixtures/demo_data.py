@@ -33,26 +33,63 @@ def _exists(doctype, name):
 
 
 def _ensure_warehouse():
-    """Create a default warehouse if not present."""
+    """Find or create default warehouses. Always returns a dict with 3 keys."""
+    existing_wh = frappe.db.get_all("Warehouse", fields=["name", "warehouse_name"],
+                                    filters={"is_group": 0}, limit=5)
+
+    desired_names = ["Pharmacy Main Store", "Pharmacy Warehouse B", "Cold Storage"]
     warehouses = {}
-    for wh_name in ["Pharmacy Main Store", "Pharmacy Warehouse B", "Cold Storage"]:
-        if _exists("Warehouse", wh_name + " - PM"):
-            warehouses[wh_name] = wh_name + " - PM"
-        elif _exists("Warehouse", wh_name):
-            warehouses[wh_name] = wh_name
-        else:
-            try:
-                company = frappe.db.get_single_value("Global Defaults", "default_company") or "Your Company"
-                doc = frappe.get_doc({
-                    "doctype": "Warehouse",
-                    "warehouse_name": wh_name,
-                    "company": company,
-                })
-                doc.insert(ignore_permissions=True)
-                warehouses[wh_name] = doc.name
-            except Exception:
-                pass
-    return warehouses
+
+    for desired in desired_names:
+        matched = [w for w in existing_wh
+                   if desired.lower() in (w.warehouse_name or "").lower()
+                   or desired.lower() in w.name.lower()]
+        warehouses[desired] = matched[0].name if matched else None
+
+    # If we found at least one warehouse, fill gaps with the first one
+    first_available = next((v for v in warehouses.values() if v), None)
+    if first_available:
+        for k, v in warehouses.items():
+            if not v:
+                warehouses[k] = first_available
+        return warehouses
+
+    # No warehouses exist at all — create one
+    company = (
+        frappe.db.get_single_value("Global Defaults", "default_company")
+        or frappe.db.get_value("Company", {}, "name")
+        or "Your Company"
+    )
+    try:
+        doc = frappe.get_doc({
+            "doctype": "Warehouse",
+            "warehouse_name": "Pharmacy Main Store",
+            "company": company,
+        })
+        doc.insert(ignore_permissions=True)
+        wh_name = doc.name
+        for k in warehouses:
+            warehouses[k] = wh_name
+        return warehouses
+    except Exception as e:
+        print(f"  ⚠ Could not create warehouse: {e}")
+        return warehouses
+
+
+def _get_warehouse():
+    """Get ANY valid warehouse from the system. Falls back to None."""
+    wh = _ensure_warehouse()
+    for v in wh.values():
+        if v:
+            return v
+    # Last-resort: try to find ANY warehouse in the system
+    try:
+        whs = frappe.db.get_all("Warehouse", filters={"is_group": 0}, limit=1)
+        if whs:
+            return whs[0].name
+    except Exception:
+        pass
+    return None
 
 
 def _ensure_user():
@@ -582,7 +619,8 @@ def create_medicine_batches():
             pass
 
     warehouses = _ensure_warehouse()
-    wh_list = list(warehouses.values())
+    wh_list = [v for v in warehouses.values() if v] or [_get_warehouse()]
+    wh_list = [w for w in wh_list if w]
     medicines = frappe.db.get_all("Medicine Master", fields=["name", "mrp", "purchase_rate", "selling_rate"])
 
     if not medicines:
@@ -765,7 +803,8 @@ def create_purchase_requests():
 
     user = _ensure_user()
     warehouses = _ensure_warehouse()
-    wh_list = list(warehouses.values())
+    wh_list = [v for v in warehouses.values() if v] or [_get_warehouse()]
+    wh_list = [w for w in wh_list if w]
     medicines = frappe.db.get_all("Medicine Master", fields=["name", "medicine_name", "purchase_rate"])
 
     if not medicines:
@@ -830,7 +869,8 @@ def create_shift_assignments():
 
     pharmacists = frappe.db.get_all("Pharmacist", pluck="name")
     warehouses = _ensure_warehouse()
-    wh_list = list(warehouses.values())
+    wh_list = [v for v in warehouses.values() if v] or [_get_warehouse()]
+    wh_list = [w for w in wh_list if w]
 
     if not pharmacists:
         print("  ⚠ No Pharmacists found, skipping shift assignments...")
@@ -868,7 +908,8 @@ def create_stock_adjustments():
 
     user = _ensure_user()
     warehouses = _ensure_warehouse()
-    wh_list = list(warehouses.values())
+    wh_list = [v for v in warehouses.values() if v] or [_get_warehouse()]
+    wh_list = [w for w in wh_list if w]
     medicines = frappe.db.get_all("Medicine Master", fields=["name", "purchase_rate"])
 
     if not medicines:
@@ -927,7 +968,8 @@ def create_stock_transfers():
 
     user = _ensure_user()
     warehouses = _ensure_warehouse()
-    wh_list = list(warehouses.values())
+    wh_list = [v for v in warehouses.values() if v] or [_get_warehouse()]
+    wh_list = [w for w in wh_list if w]
     medicines = frappe.db.get_all("Medicine Master", fields=["name", "medicine_name"])
 
     if not medicines or len(wh_list) < 2:
@@ -1160,36 +1202,39 @@ def create_expiry_alerts():
     medicines = frappe.db.get_all("Medicine Master", pluck="name")
     batches = frappe.db.get_all("Medicine Batch", fields=["name", "expiry_date"])
     warehouses = _ensure_warehouse()
-    wh_list = list(warehouses.values())
+    wh_list = [v for v in warehouses.values() if v] or [_get_warehouse()]
+    wh_list = [w for w in wh_list if w]
 
     if not medicines or not batches:
         print("  ⚠ Missing dependencies (Medicines/Batches), skipping expiry alerts...")
         return
 
+    wh = wh_list[0] if wh_list else None
+
     alerts = [
         {"medicine": medicines[0], "batch_no": batches[0].name if len(batches) > 0 else None,
          "expiry_date": batches[0].expiry_date if len(batches) > 0 else add_months(today(), 2),
-         "days_to_expiry": 60, "qty": 45, "warehouse": wh_list[0] if wh_list else None,
+         "days_to_expiry": 60, "qty": 45, "warehouse": wh,
          "alert_level": "Warning", "is_resolved": 0},
         {"medicine": medicines[5] if len(medicines) > 5 else medicines[0],
          "batch_no": batches[4].name if len(batches) > 4 else (batches[0].name if batches else None),
          "expiry_date": add_months(today(), 1),
-         "days_to_expiry": 30, "qty": 22, "warehouse": wh_list[1] if len(wh_list) > 1 else (wh_list[0] if wh_list else None),
+         "days_to_expiry": 30, "qty": 22, "warehouse": wh,
          "alert_level": "Critical", "is_resolved": 0},
         {"medicine": medicines[4] if len(medicines) > 4 else medicines[0],
          "batch_no": batches[3].name if len(batches) > 3 else (batches[0].name if batches else None),
          "expiry_date": add_months(today(), 5),
-         "days_to_expiry": 150, "qty": 78, "warehouse": wh_list[0] if wh_list else None,
+         "days_to_expiry": 150, "qty": 78, "warehouse": wh,
          "alert_level": "Info", "is_resolved": 0},
         {"medicine": medicines[2] if len(medicines) > 2 else medicines[0],
          "batch_no": batches[2].name if len(batches) > 2 else (batches[0].name if batches else None),
          "expiry_date": add_days(today(), 75),
-         "days_to_expiry": 75, "qty": 120, "warehouse": wh_list[0] if wh_list else None,
+         "days_to_expiry": 75, "qty": 120, "warehouse": wh,
          "alert_level": "Warning", "is_resolved": 0},
         {"medicine": medicines[1] if len(medicines) > 1 else medicines[0],
          "batch_no": batches[1].name if len(batches) > 1 else (batches[0].name if batches else None),
          "expiry_date": add_months(today(), 10),
-         "days_to_expiry": 300, "qty": 500, "warehouse": wh_list[0] if wh_list else None,
+         "days_to_expiry": 300, "qty": 500, "warehouse": wh,
          "alert_level": "Info", "is_resolved": 1},
     ]
 
