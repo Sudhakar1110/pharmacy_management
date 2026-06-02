@@ -143,28 +143,7 @@
       "parenttype": "Workspace",
       "doctype": "Workspace Link"
     },
-    {
-      "name": "vho7e4hr37",
-      "owner": "Administrator",
-      "creation": "2026-06-01 12:00:00",
-      "modified": "2026-06-02 11:39:22.884659",
-      "modified_by": "Administrator",
-      "docstatus": 0,
-      "idx": 6,
-      "type": "Link",
-      "label": "Drug Composition Item",
-      "hidden": 0,
-      "link_type": "DocType",
-      "link_to": "Drug Composition Item",
-      "dependencies": "",
-      "onboard": 0,
-      "is_query_report": 0,
-      "link_count": 0,
-      "parent": "Pharmacy Management",
-      "parentfield": "links",
-      "parenttype": "Workspace",
-      "doctype": "Workspace Link"
-    },
+
     {
       "name": "cb_inventory",
       "owner": "Administrator",
@@ -228,28 +207,7 @@
       "parenttype": "Workspace",
       "doctype": "Workspace Link"
     },
-    {
-      "name": "vhoep6ejlr",
-      "owner": "Administrator",
-      "creation": "2026-06-01 12:00:00",
-      "modified": "2026-06-02 11:39:22.884659",
-      "modified_by": "Administrator",
-      "docstatus": 0,
-      "idx": 10,
-      "type": "Link",
-      "label": "Stock Adjustment Item",
-      "hidden": 0,
-      "link_type": "DocType",
-      "link_to": "Stock Adjustment Item",
-      "dependencies": "",
-      "onboard": 0,
-      "is_query_report": 0,
-      "link_count": 0,
-      "parent": "Pharmacy Management",
-      "parentfield": "links",
-      "parenttype": "Workspace",
-      "doctype": "Workspace Link"
-    },
+
     {
       "name": "vhoddvij11",
       "owner": "Administrator",
@@ -272,28 +230,7 @@
       "parenttype": "Workspace",
       "doctype": "Workspace Link"
     },
-    {
-      "name": "vhol1gkq30",
-      "owner": "Administrator",
-      "creation": "2026-06-01 12:00:00",
-      "modified": "2026-06-02 11:39:22.884659",
-      "modified_by": "Administrator",
-      "docstatus": 0,
-      "idx": 12,
-      "type": "Link",
-      "label": "Stock Transfer Item",
-      "hidden": 0,
-      "link_type": "DocType",
-      "link_to": "Stock Transfer Item",
-      "dependencies": "",
-      "onboard": 0,
-      "is_query_report": 0,
-      "link_count": 0,
-      "parent": "Pharmacy Management",
-      "parentfield": "links",
-      "parenttype": "Workspace",
-      "doctype": "Workspace Link"
-    },
+
     {
       "name": "cb_batch",
       "owner": "Administrator",
@@ -502,28 +439,7 @@
       "parenttype": "Workspace",
       "doctype": "Workspace Link"
     },
-    {
-      "name": "vhop4kbu01",
-      "owner": "Administrator",
-      "creation": "2026-06-01 12:00:00",
-      "modified": "2026-06-02 11:39:22.884659",
-      "modified_by": "Administrator",
-      "docstatus": 0,
-      "idx": 23,
-      "type": "Link",
-      "label": "POS Invoice Item Ext",
-      "hidden": 0,
-      "link_type": "DocType",
-      "link_to": "POS Invoice Item Ext",
-      "dependencies": "",
-      "onboard": 0,
-      "is_query_report": 0,
-      "link_count": 0,
-      "parent": "Pharmacy Management",
-      "parentfield": "links",
-      "parenttype": "Workspace",
-      "doctype": "Workspace Link"
-    },
+
     {
       "name": "cb_compliance",
       "owner": "Administrator",
