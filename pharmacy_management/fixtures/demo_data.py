@@ -1085,12 +1085,15 @@ def create_pos_invoices():
         print("  ⚠ Missing dependencies (Patients/Medicines), skipping POS invoices...")
         return
 
+    # Note: subtotal, tax_amount, grand_total, change_amount are NOT set here
+    # because the DocType's validate() recalculates them from actual DB rates.
+    # We use a generous paid_amount to always pass validate_payment().
     invoices = [
         {"posting_date": add_days(today(), -5), "posting_time": "10:30:00",
          "patient": patients[0].name, "patient_name": patients[0].patient_name,
          "cashier": user, "discount_amount": 50, "discount_percent": 0,
-         "subtotal": 450, "tax_amount": 54, "grand_total": 504, "paid_amount": 504, "change_amount": 0,
-         "payment_mode": "UPI", "upi_reference": "UPI-REF-001", "status": "Paid",
+         "paid_amount": 99999,
+         "payment_mode": "UPI", "upi_reference": "UPI-REF-001", "status": "Draft",
          "items": [
              {"medicine": medicines[0].name, "medicine_name": medicines[0].medicine_name,
               "qty": 1, "uom": "Strip", "rate": medicines[0].selling_rate, "mrp": medicines[0].mrp,
@@ -1108,8 +1111,8 @@ def create_pos_invoices():
          "patient": patients[2].name if len(patients) > 2 else patients[0].name,
          "patient_name": patients[2].patient_name if len(patients) > 2 else patients[0].patient_name,
          "cashier": user, "discount_amount": 0, "discount_percent": 0,
-         "subtotal": 780, "tax_amount": 93.60, "grand_total": 873.60, "paid_amount": 875, "change_amount": 1.40,
-         "payment_mode": "Cash", "status": "Paid",
+         "paid_amount": 99999,
+         "payment_mode": "Cash", "status": "Draft",
          "items": [
              {"medicine": medicines[2].name if len(medicines) > 2 else medicines[0].name,
               "medicine_name": medicines[2].medicine_name if len(medicines) > 2 else medicines[0].medicine_name,
@@ -1131,8 +1134,8 @@ def create_pos_invoices():
          "patient_name": patients[4].patient_name if len(patients) > 4 else patients[0].patient_name,
          "cashier": user, "discount_amount": 100, "discount_percent": 0,
          "loyalty_points_used": 200, "loyalty_amount": 20,
-         "subtotal": 1200, "tax_amount": 144, "grand_total": 1344, "paid_amount": 1224, "change_amount": 0,
-         "payment_mode": "Mixed", "status": "Paid",
+         "paid_amount": 99999,
+         "payment_mode": "Mixed", "status": "Draft",
          "items": [
              {"medicine": medicines[3].name if len(medicines) > 3 else medicines[0].name,
               "medicine_name": medicines[3].medicine_name if len(medicines) > 3 else medicines[0].medicine_name,
@@ -1146,8 +1149,8 @@ def create_pos_invoices():
          "patient": patients[1].name if len(patients) > 1 else patients[0].name,
          "patient_name": patients[1].patient_name if len(patients) > 1 else patients[0].patient_name,
          "cashier": user, "discount_amount": 25, "discount_percent": 0,
-         "subtotal": 320, "tax_amount": 57.60, "grand_total": 377.60, "paid_amount": 377.60, "change_amount": 0,
-         "payment_mode": "Card", "upi_reference": "CARD-REF-004", "status": "Paid",
+         "paid_amount": 99999,
+         "payment_mode": "Card", "upi_reference": "CARD-REF-004", "status": "Draft",
          "items": [
              {"medicine": medicines[1].name if len(medicines) > 1 else medicines[0].name,
               "medicine_name": medicines[1].medicine_name if len(medicines) > 1 else medicines[0].medicine_name,
@@ -1168,7 +1171,7 @@ def create_pos_invoices():
          "patient": patients[5].name if len(patients) > 5 else patients[0].name,
          "patient_name": patients[5].patient_name if len(patients) > 5 else patients[0].patient_name,
          "cashier": user, "discount_amount": 0, "discount_percent": 0,
-         "subtotal": 285, "tax_amount": 34.20, "grand_total": 319.20, "paid_amount": 319.20, "change_amount": 0,
+         "paid_amount": 99999,
          "payment_mode": "UPI", "upi_reference": "UPI-REF-005", "status": "Draft",
          "items": [
              {"medicine": medicines[6].name if len(medicines) > 6 else medicines[0].name,
