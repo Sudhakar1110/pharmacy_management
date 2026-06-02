@@ -43,7 +43,7 @@ def search_medicines(query=None, category=None, manufacturer=None, min_price=Non
                 "requires_prescription", "image", "description", "schedule"],
         order_by=order_by,
         limit=limit,
-        offset=offset,
+        start=offset,
     )
     
     # Get stock availability for each medicine
