@@ -4,7 +4,7 @@ no_cache = 1
 
 def get_context(context):
     """Medicine detail page - accessed via /shop/<medicine_name> route."""
-    medicine_name = frappe.form_dict.get("name")
+    medicine_name = frappe.form_dict.get("medicine_name")
 
     if not medicine_name:
         frappe.local.flags.redirect_location = "/shop"
