@@ -1,5 +1,5 @@
 {
   "doctype":"Report","name":"Stock Ledger Medicine","module":"Inventory",
-  "ref_doctype":"Medicine Batch","report_type":"Script Report","is_standard":"Yes",
+  "report_type":"Script Report","is_standard":"Yes",
   "roles":[{"role":"Pharmacy Administrator"},{"role":"Store Manager"},{"role":"Pharmacy Auditor"}]
 }
