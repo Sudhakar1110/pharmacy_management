@@ -73,12 +73,12 @@ def execute():
 
 	# content – JSON array of card / section / shortcut widgets  ----------
 	content = json.dumps([
-		{"id": "a1b2c3d4", "type": "section",    "data": {"label": "Quick Actions", "col": 12}},
+		{"id": "a1b2c3d4", "type": "header",     "data": {"text": "Quick Actions", "level": 4, "col": 12}},
 		{"id": "b2c3d4e5", "type": "shortcut",   "data": {"shortcut_name": "Medicine Master", "col": 3}},
 		{"id": "c3d4e5f6", "type": "shortcut",   "data": {"shortcut_name": "Medicine Batch", "col": 3}},
 		{"id": "d4e5f6g7", "type": "shortcut",   "data": {"shortcut_name": "Stock Adjustment", "col": 3}},
 		{"id": "e5f6g7h8", "type": "shortcut",   "data": {"shortcut_name": "Patient", "col": 3}},
-		{"id": "f6g7h8i9", "type": "section",    "data": {"label": "Pharmacy Operations", "col": 12}},
+		{"id": "f6g7h8i9", "type": "header",     "data": {"text": "Pharmacy Operations", "level": 4, "col": 12}},
 		{"id": "g7h8i9j0", "type": "card",       "data": {"card_name": "Drug Catalog", "col": 4, "links": [
 			{"type": "link", "label": "Medicine Master", "link_to": "Medicine Master", "link_type": "DocType"},
 			{"type": "link", "label": "Medicine Category", "link_to": "Medicine Category", "link_type": "DocType"},
@@ -96,7 +96,7 @@ def execute():
 		{"id": "i9j0k1l2", "type": "card",       "data": {"card_name": "Batch Tracking", "col": 4, "links": [
 			{"type": "link", "label": "Expiry Alert", "link_to": "Expiry Alert", "link_type": "DocType"},
 		]}},
-		{"id": "j0k1l2m3", "type": "section",    "data": {"label": "Patient & CRM", "col": 12}},
+		{"id": "j0k1l2m3", "type": "header",     "data": {"text": "Patient & CRM", "level": 4, "col": 12}},
 		{"id": "k1l2m3n4", "type": "card",       "data": {"card_name": "Pharmacy CRM", "col": 4, "links": [
 			{"type": "link", "label": "Patient", "link_to": "Patient", "link_type": "DocType"},
 			{"type": "link", "label": "Loyalty Program", "link_to": "Loyalty Program", "link_type": "DocType"},
@@ -110,7 +110,7 @@ def execute():
 			{"type": "link", "label": "POS Invoice Ext", "link_to": "POS Invoice Ext", "link_type": "DocType"},
 			{"type": "link", "label": "POS Invoice Item Ext", "link_to": "POS Invoice Item Ext", "link_type": "DocType"},
 		]}},
-		{"id": "n4o5p6q7", "type": "section",    "data": {"label": "Compliance & HR", "col": 12}},
+		{"id": "n4o5p6q7", "type": "header",     "data": {"text": "Compliance & HR", "level": 4, "col": 12}},
 		{"id": "o5p6q7r8", "type": "card",       "data": {"card_name": "Compliance", "col": 6, "links": [
 			{"type": "link", "label": "Drug License", "link_to": "Drug License", "link_type": "DocType"},
 			{"type": "link", "label": "Audit Log", "link_to": "Audit Log", "link_type": "DocType"},
@@ -119,7 +119,7 @@ def execute():
 			{"type": "link", "label": "Pharmacist", "link_to": "Pharmacist", "link_type": "DocType"},
 			{"type": "link", "label": "Shift Assignment", "link_to": "Shift Assignment", "link_type": "DocType"},
 		]}},
-		{"id": "q7r8s9t0", "type": "section",    "data": {"label": "Reports", "col": 12}},
+		{"id": "q7r8s9t0", "type": "header",     "data": {"text": "Reports", "level": 4, "col": 12}},
 		{"id": "r8s9t0u1", "type": "card",       "data": {"card_name": "Reports", "col": 12, "links": [
 			{"type": "link", "label": "Near Expiry Stock", "link_to": "Near Expiry Stock", "link_type": "Report"},
 			{"type": "link", "label": "Stock Ledger Medicine", "link_to": "Stock Ledger Medicine", "link_type": "Report"},
