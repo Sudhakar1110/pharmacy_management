@@ -498,6 +498,26 @@ def _place_order(address_name=None, payment_method="COD", prescription_ref=None,
         create_order_status_record(so, "Confirmed")
         clear_cart()
         return {"success": True, "order_id": so.name, "payment_required": False}
+    elif payment_method == "UPI":
+        create_order_status_record(so, "Pending Payment")
+        clear_cart()
+        # Get UPI details from Pharmacy Settings
+        upi_id = ""
+        upi_holder = ""
+        try:
+            settings = frappe.get_single("Pharmacy Settings")
+            upi_id = getattr(settings, "upi_id", "") or ""
+            upi_holder = getattr(settings, "upi_holder_name", "") or ""
+        except Exception:
+            pass
+        return {
+            "success": True,
+            "order_id": so.name,
+            "payment_required": True,
+            "payment_method": "UPI",
+            "upi_id": upi_id,
+            "upi_holder_name": upi_holder,
+        }
     else:
         create_order_status_record(so, "Pending Payment")
         clear_cart()
@@ -564,6 +584,48 @@ def get_checkout_summary():
         },
         "addresses": addresses,
     }
+
+
+@frappe.whitelist(allow_guest=True)
+def confirm_upi_payment(order_id):
+    """Confirm a UPI payment manually - submits the order."""
+    try:
+        if not frappe.db.exists("Sales Order", order_id):
+            return {"success": False, "message": _("Order not found")}
+
+        so = frappe.get_doc("Sales Order", order_id)
+        if so.docstatus == 1:
+            return {"success": True, "order_id": order_id, "message": _("Order already confirmed")}
+
+        so.flags.ignore_permissions = True
+        try:
+            so.db_set("custom_payment_method", "UPI", update_modified=False)
+        except Exception:
+            pass
+        so.submit()
+
+        try:
+            pe = frappe.new_doc("Payment Entry")
+            pe.payment_type = "Receive"
+            pe.company = so.company
+            pe.posting_date = frappe.utils.today()
+            pe.party_type = "Customer"
+            pe.party = so.customer
+            pe.paid_amount = so.grand_total
+            pe.received_amount = so.grand_total
+            pe.reference_doctype = "Sales Order"
+            pe.reference_name = so.name
+            pe.mode_of_payment = "UPI"
+            pe.flags.ignore_permissions = True
+            pe.insert(ignore_permissions=True)
+            pe.submit()
+        except Exception as e:
+            frappe.log_error(f"UPI Payment Entry failed: {e}", "Payment")
+
+        return {"success": True, "order_id": order_id, "message": _("Order confirmed! Thank you for your payment.")}
+    except Exception as e:
+        frappe.log_error(f"UPI confirm error: {e}", "Payment")
+        return {"success": False, "message": f"Confirmation error: {str(e)}"}
 
 
 @frappe.whitelist(allow_guest=True)

@@ -367,6 +367,7 @@ function saveNewAddress() {
 function renderPaymentOptions() {
     const options = [
         {id: 'COD', name: 'Cash on Delivery', icon: 'bi-cash-stack', desc: 'Pay when you receive'},
+        {id: 'UPI', name: 'Direct UPI Payment', icon: 'bi-phone', desc: 'Pay directly via GPay, PhonePe, Paytm'},
         {id: 'Razorpay', name: 'Card / UPI / Net Banking', icon: 'bi-credit-card-2-front', desc: 'Pay online via Razorpay (GPay, PhonePe, Paytm, Cards & more)'},
     ];
     
@@ -482,8 +483,14 @@ $('#checkoutForm').on('submit', function(e) {
         $.post('/api/method/pharmacy_management.api.cart.place_order', orderData, function(res) {
             var result = res.message;
             if (result && result.success) {
-                // Show success on this page instead of redirecting
-                showOrderSuccess(result.order_id, result.payment_required);
+                // Show success on this page
+                showOrderSuccess({
+                    orderId: result.order_id,
+                    paymentRequired: result.payment_required,
+                    paymentMethod: result.payment_method,
+                    upiId: result.upi_id,
+                    upiHolderName: result.upi_holder_name
+                });
             } else {
                 btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order');
                 var errMsg = result && result.message ? result.message : 'Failed to place order';
@@ -523,17 +530,38 @@ $('#checkoutForm').on('submit', function(e) {
     }
 });
 
-function showOrderSuccess(orderId, paymentRequired) {
-    // Replace the checkout form with a success message
+function showOrderSuccess(opts) {
+    const orderId = opts.orderId;
+    const paymentRequired = opts.paymentRequired;
+    const paymentMethod = opts.paymentMethod || '';
+    const upiId = opts.upiId || '';
+    const upiHolder = opts.upiHolderName || '';
+
     var html = `
         <div class="text-center py-5">
             <i class="bi bi-check-circle-fill display-1 text-success"></i>
             <h3 class="mt-3 fw-bold">Order Placed Successfully!</h3>
             <p class="text-muted">Your order <strong>${orderId}</strong> has been placed.</p>
-            <div class="card border-0 shadow-sm mx-auto mt-4" style="max-width: 400px;">
+            <div class="card border-0 shadow-sm mx-auto mt-4" style="max-width: 440px;">
                 <div class="card-body p-4">
                     <p class="mb-2">Order ID: <strong class="text-primary">${orderId}</strong></p>
-                    ${paymentRequired ? `
+                    ${paymentRequired && paymentMethod === 'UPI' ? `
+                    <div class="alert alert-info text-start">
+                        <i class="bi bi-info-circle"></i> Please pay the amount using any UPI app and then confirm.
+                    </div>
+                    <div class="bg-light rounded p-3 mb-3 text-start">
+                        <p class="mb-1"><strong>Pay to UPI ID:</strong></p>
+                        <p class="mb-0 fs-4 fw-bold text-primary">${upiId || '(Set your UPI ID in Pharmacy Settings)'}</p>
+                        ${upiHolder ? `<p class="mb-0 text-muted small">Account: ${upiHolder}</p>` : ''}
+                    </div>
+                    <button class="btn btn-success btn-lg w-100" onclick="confirmUpiPayment('${orderId}')">
+                        <i class="bi bi-check-circle"></i> I've Paid - Confirm Order
+                    </button>
+                    <div id="upiConfirmMsg" class="d-none text-center mt-2">
+                        <div class="spinner-border spinner-border-sm text-success"></div>
+                        <small class="text-muted ms-1">Confirming payment...</small>
+                    </div>
+                    ` : paymentRequired ? `
                     <p class="text-warning mb-3"><i class="bi bi-clock"></i> Payment pending</p>
                     <button class="btn btn-primary btn-lg w-100" onclick="payNow('${orderId}')">
                         <i class="bi bi-credit-card"></i> Pay Now
@@ -553,8 +581,41 @@ function showOrderSuccess(orderId, paymentRequired) {
         </div>
     `;
     
-    // Replace the entire checkout content
     $('.checkout-page .container').html(html);
+}
+
+function confirmUpiPayment(orderId) {
+    var btn = $('button:contains("Confirm Order")');
+    btn.prop('disabled', true);
+    $('#upiConfirmMsg').removeClass('d-none');
+
+    $.post('/api/method/pharmacy_management.api.cart.confirm_upi_payment', {
+        order_id: orderId
+    }, function(res) {
+        var data = res.message;
+        if (data && data.success) {
+            showToast('Payment confirmed! Order is now active.', 'success');
+            $('.checkout-page .container').html(`
+                <div class="text-center py-5">
+                    <i class="bi bi-check-circle-fill display-1 text-success"></i>
+                    <h3 class="mt-3 fw-bold">Payment Confirmed!</h3>
+                    <p class="text-muted">Order <strong>${orderId}</strong> is now confirmed.</p>
+                    <p class="text-muted">We will process and deliver your order soon.</p>
+                    <a href="/" class="btn btn-primary mt-3">
+                        <i class="bi bi-house"></i> Back to Home
+                    </a>
+                </div>
+            `);
+        } else {
+            btn.prop('disabled', false);
+            $('#upiConfirmMsg').addClass('d-none');
+            showToast(data && data.message ? data.message : 'Failed to confirm payment', 'danger');
+        }
+    }).fail(function() {
+        btn.prop('disabled', false);
+        $('#upiConfirmMsg').addClass('d-none');
+        showToast('Failed to confirm payment. Please try again.', 'danger');
+    });
 }
 
 function payNow(orderId) {
