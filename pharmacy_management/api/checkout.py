@@ -284,7 +284,8 @@ def get_checkout_summary():
                 "pincode": addr.pincode,
                 "phone": addr.phone,
                 "email_id": addr.email_id,
-                "is_primary": addr.is_primary_shipping_address,
+                "is_shipping": addr.is_primary_shipping_address,
+                "is_billing": addr.is_primary_billing_address,
             })
     
     return {

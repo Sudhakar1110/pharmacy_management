@@ -53,6 +53,10 @@
                         <input type="text" id="addrPincode" class="form-control" required>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">Country</label>
+                        <input type="text" id="addrCountry" class="form-control" value="India" required>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Phone</label>
                         <input type="text" id="addrPhone" class="form-control">
                     </div>
@@ -128,6 +132,7 @@ function saveAddress() {
         city: $('#addrCity').val(),
         state: $('#addrState').val(),
         pincode: $('#addrPincode').val(),
+        country: $('#addrCountry').val(),
         phone: $('#addrPhone').val(),
         is_shipping: 1
     };

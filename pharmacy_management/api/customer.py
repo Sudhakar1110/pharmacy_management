@@ -207,7 +207,7 @@ def get_addresses():
 
 
 @frappe.whitelist()
-def save_address(address_line1, city, state, pincode, address_line2=None, phone=None, is_shipping=0, address_name=None):
+def save_address(address_line1, city, state, pincode, country="India", address_line2=None, phone=None, is_shipping=0, address_name=None):
     """Create or update a customer address."""
     user = frappe.session.user
     email = frappe.db.get_value("User", user, "email") or user
@@ -225,6 +225,7 @@ def save_address(address_line1, city, state, pincode, address_line2=None, phone=
         addr.city = city
         addr.state = state
         addr.pincode = pincode
+        addr.country = country
         addr.phone = phone or addr.phone
         addr.is_primary_shipping_address = int(is_shipping)
         addr.flags.ignore_permissions = True
@@ -240,6 +241,7 @@ def save_address(address_line1, city, state, pincode, address_line2=None, phone=
     addr.city = city
     addr.state = state
     addr.pincode = pincode
+    addr.country = country
     addr.phone = phone or ""
     addr.email_id = email
     addr.is_primary_shipping_address = int(is_shipping)
