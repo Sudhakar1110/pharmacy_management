@@ -404,6 +404,10 @@ function addToCart(medicine) {
             method: 'pharmacy_management.api.cart.add_to_cart',
             args: { medicine: medicine, qty: 1 },
             callback: function(r) {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-cart-plus"></i> Add to Cart';
+                }
                 if (r.message && r.message.success) {
                     showToast('Added to cart!', 'success');
                     updateCartBadge();
@@ -412,6 +416,10 @@ function addToCart(medicine) {
                 }
             },
             error: function(r) {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-cart-plus"></i> Add to Cart';
+                }
                 let errMsg = 'Error adding to cart';
                 if (r && r.responseJSON && r.responseJSON._server_messages) {
                     try {
@@ -422,12 +430,6 @@ function addToCart(medicine) {
                     errMsg = r.responseJSON.message;
                 }
                 showToast(errMsg, 'danger');
-            },
-            always: function() {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-cart-plus"></i> Add to Cart';
-                }
             }
         });
     } else {
