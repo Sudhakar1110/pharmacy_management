@@ -9,8 +9,16 @@ def get_context(context):
     context.title = "Track Order"
     context.success = frappe.form_dict.get("success") == "1"
 
-    # Get order_id from URL params (set by route rule or query string)
+    # Try to get order_id from multiple sources
+    # 1. frappe.form_dict (set by route rule or query string)
     order_id = frappe.form_dict.get("order_id")
+    
+    # 2. Parse from URL path (/track-order/ORDER-ID)
+    if not order_id:
+        path = frappe.local.request.path.strip("/")
+        parts = path.split("/")
+        if len(parts) >= 2 and parts[0] == "track-order" and parts[1]:
+            order_id = parts[1]
 
     context.order = None
     context.items = []
@@ -38,7 +46,7 @@ def get_context(context):
             except Exception:
                 pass
 
-            # Get Order Status timeline (independent try/except)
+            # Order Status timeline (independent try/except)
             try:
                 context.statuses = frappe.get_all(
                     "Order Status",
@@ -49,7 +57,7 @@ def get_context(context):
             except Exception:
                 pass
 
-            # Get payments (independent try/except)
+            # Payments (independent try/except)
             try:
                 context.payments = frappe.get_all(
                     "Payment Entry",
