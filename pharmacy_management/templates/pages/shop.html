@@ -391,27 +391,119 @@ function toggleFilters() {
 }
 
 function addToCart(medicine) {
-    $.post('/api/method/pharmacy_management.api.cart.add_to_cart', {
-        medicine: medicine,
-        qty: 1
-    }, function(res) {
-        if (res.message.success) {
-            showToast('Added to cart!', 'success');
-            updateCartBadge();
-        }
-    }).fail(function(xhr) {
-        showToast(xhr.responseJSON?.message || 'Error adding to cart', 'danger');
-    });
+    // Disable button to prevent double-clicks
+    const btn = event ? event.target.closest('.add-to-cart-btn, .btn') : null;
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Adding...';
+    }
+
+    // Use frappe.call which handles CSRF tokens automatically
+    if (typeof frappe !== 'undefined' && frappe.call) {
+        frappe.call({
+            method: 'pharmacy_management.api.cart.add_to_cart',
+            args: { medicine: medicine, qty: 1 },
+            callback: function(r) {
+                if (r.message && r.message.success) {
+                    showToast('Added to cart!', 'success');
+                    updateCartBadge();
+                } else {
+                    showToast(r.message?.message || 'Could not add to cart', 'danger');
+                }
+            },
+            error: function(r) {
+                let errMsg = 'Error adding to cart';
+                if (r && r.responseJSON && r.responseJSON._server_messages) {
+                    try {
+                        const msgs = JSON.parse(r.responseJSON._server_messages);
+                        errMsg = JSON.parse(msgs[0]).message || errMsg;
+                    } catch(e) {}
+                } else if (r && r.responseJSON && r.responseJSON.message) {
+                    errMsg = r.responseJSON.message;
+                }
+                showToast(errMsg, 'danger');
+            },
+            always: function() {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-cart-plus"></i> Add to Cart';
+                }
+            }
+        });
+    } else {
+        // Fallback: use $.ajax with CSRF token
+        $.ajax({
+            url: '/api/method/pharmacy_management.api.cart.add_to_cart',
+            method: 'POST',
+            data: { medicine: medicine, qty: 1 },
+            headers: {
+                'X-Frappe-CSRF-Token': (typeof frappe !== 'undefined' && frappe.csrf_token)
+                    ? frappe.csrf_token
+                    : document.cookie.match(/csrf_token=([^;]+)/)?.[1] || ''
+            },
+            success: function(res) {
+                if (res.message && res.message.success) {
+                    showToast('Added to cart!', 'success');
+                    updateCartBadge();
+                } else {
+                    showToast('Could not add to cart', 'danger');
+                }
+            },
+            error: function(xhr) {
+                let errMsg = 'Error adding to cart';
+                if (xhr.responseJSON) {
+                    if (xhr.responseJSON._server_messages) {
+                        try {
+                            const msgs = JSON.parse(xhr.responseJSON._server_messages);
+                            errMsg = JSON.parse(msgs[0]).message || errMsg;
+                        } catch(e) {}
+                    } else if (xhr.responseJSON.message) {
+                        errMsg = xhr.responseJSON.message;
+                    }
+                }
+                showToast(errMsg, 'danger');
+            },
+            complete: function() {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-cart-plus"></i> Add to Cart';
+                }
+            }
+        });
+    }
 }
 
 function toggleWishlist(medicine) {
-    $.post('/api/method/pharmacy_management.api.wishlist.add_to_wishlist', {
-        medicine: medicine
-    }, function(res) {
-        if (res.message.success) {
-            showToast('Added to wishlist!', 'success');
-        }
-    });
+    if (typeof frappe !== 'undefined' && frappe.call) {
+        frappe.call({
+            method: 'pharmacy_management.api.wishlist.add_to_wishlist',
+            args: { medicine: medicine },
+            callback: function(r) {
+                if (r.message && r.message.success) {
+                    showToast('Added to wishlist!', 'success');
+                }
+            },
+            error: function() {
+                showToast('Could not update wishlist', 'danger');
+            }
+        });
+    } else {
+        $.ajax({
+            url: '/api/method/pharmacy_management.api.wishlist.add_to_wishlist',
+            method: 'POST',
+            data: { medicine: medicine },
+            headers: {
+                'X-Frappe-CSRF-Token': (typeof frappe !== 'undefined' && frappe.csrf_token)
+                    ? frappe.csrf_token
+                    : document.cookie.match(/csrf_token=([^;]+)/)?.[1] || ''
+            },
+            success: function(res) {
+                if (res.message && res.message.success) {
+                    showToast('Added to wishlist!', 'success');
+                }
+            }
+        });
+    }
 }
 
 function showToast(message, type = 'success') {

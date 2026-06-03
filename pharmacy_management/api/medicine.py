@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 import json
+from pharmacy_management.api.cart import get_medicine_stock
 
 
 @frappe.whitelist(allow_guest=True)
@@ -48,7 +49,7 @@ def search_medicines(query=None, category=None, manufacturer=None, min_price=Non
     
     # Get stock availability for each medicine
     for med in medicines:
-        stock = frappe.db.get_value("Bin", {"item_code": med.name}, "actual_qty") or 0
+        stock = get_medicine_stock(med.name)
         med.available_stock = stock
         med.in_stock = stock > 0
         if med.mrp and med.selling_rate:
@@ -73,7 +74,7 @@ def get_medicine_details(medicine_name):
         frappe.throw(_("Medicine not found"), frappe.DoesNotExistError)
     
     # Get stock info
-    stock = frappe.db.get_value("Bin", {"item_code": medicine.name}, "actual_qty") or 0
+    stock = get_medicine_stock(medicine.name)
     
     # Get batches
     batches = frappe.get_all(
@@ -96,7 +97,7 @@ def get_medicine_details(medicine_name):
     )
     
     for r in related:
-        r_stock = frappe.db.get_value("Bin", {"item_code": r.name}, "actual_qty") or 0
+        r_stock = get_medicine_stock(r.name)
         r.in_stock = r_stock > 0
         if r.mrp and r.selling_rate:
             r.discount_percent = round((1 - r.selling_rate / r.mrp) * 100, 1)
@@ -176,7 +177,7 @@ def get_featured_medicines():
     )
     
     for med in medicines:
-        stock = frappe.db.get_value("Bin", {"item_code": med.name}, "actual_qty") or 0
+        stock = get_medicine_stock(med.name)
         med.in_stock = stock > 0
         if med.mrp and med.selling_rate:
             med.discount_percent = round((1 - med.selling_rate / med.mrp) * 100, 1)

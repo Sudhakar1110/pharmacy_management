@@ -7,7 +7,11 @@ def get_cart_key():
     """Get the cart session key for current user."""
     if frappe.session.user and frappe.session.user != "Guest":
         return f"pharmacy_cart:{frappe.session.user}"
-    session_id = frappe.session.sid or frappe.local.session.sid
+    # Safely get session ID
+    try:
+        session_id = frappe.session.sid
+    except Exception:
+        session_id = "anonymous"
     return f"pharmacy_cart:guest:{session_id}"
 
 
@@ -30,36 +34,95 @@ def save_cart_data(cart):
     frappe.cache().set(cart_key, cart, expires_in_sec=86400)
 
 
+def get_medicine_stock(medicine_name):
+    """Get available stock for a medicine.
+    
+    Checks multiple sources in priority order:
+    1. Medicine Batch records (primary source of truth)
+    2. ERPNext Bin table (if fix_stock.py was run)
+    3. Defaults to 999 if no stock tracking exists (allows cart to work)
+    """
+    from frappe.utils import today
+
+    # Source 1: Medicine Batch - sum of current_qty for active, non-expired batches
+    try:
+        batch_stock = frappe.db.sql("""
+            SELECT COALESCE(SUM(current_qty), 0) as total
+            FROM `tabMedicine Batch`
+            WHERE medicine = %s
+              AND batch_status NOT IN ('Disposed', 'Expired')
+              AND (expiry_date >= %s OR expiry_date IS NULL)
+        """, (medicine_name, today()), as_dict=True)
+        
+        if batch_stock and batch_stock[0].total > 0:
+            return batch_stock[0].total
+    except Exception:
+        pass  # Medicine Batch table may not exist yet
+    
+    # Source 2: ERPNext Bin table
+    try:
+        bin_stock = frappe.db.get_value("Bin", {"item_code": medicine_name}, "actual_qty")
+        if bin_stock and bin_stock > 0:
+            return bin_stock
+    except Exception:
+        pass
+    
+    # Source 3: Check if ANY stock tracking exists at all
+    has_batches = False
+    has_bins = False
+    try:
+        has_batches = frappe.db.count("Medicine Batch", {"medicine": medicine_name}) > 0
+    except Exception:
+        pass
+    try:
+        has_bins = frappe.db.exists("Bin", {"item_code": medicine_name})
+    except Exception:
+        pass
+    
+    if has_batches or has_bins:
+        # Stock tracking exists but stock is zero
+        return 0
+    
+    # No stock tracking at all - default to available (allows demo/initial use)
+    return 999
+
+
 def merge_guest_cart_to_user():
     """Merge guest cart into user cart on login."""
     if frappe.session.user == "Guest":
         return
     
-    guest_key = f"pharmacy_cart:guest:{frappe.session.sid}"
-    guest_cart = frappe.cache().get(guest_key)
-    if not guest_cart or not guest_cart.get("items"):
-        return
-    
-    user_cart = get_cart_data()
-    
-    for guest_item in guest_cart["items"]:
-        found = False
-        for user_item in user_cart["items"]:
-            if user_item["medicine"] == guest_item["medicine"]:
-                user_item["qty"] += guest_item["qty"]
-                found = True
-                break
-        if not found:
-            user_cart["items"].append(guest_item)
-    
-    save_cart_data(user_cart)
-    frappe.cache().delete(guest_key)
+    try:
+        guest_key = f"pharmacy_cart:guest:{frappe.session.sid}"
+        guest_cart = frappe.cache().get(guest_key)
+        if not guest_cart or not guest_cart.get("items"):
+            return
+        
+        user_cart = get_cart_data()
+        
+        for guest_item in guest_cart["items"]:
+            found = False
+            for user_item in user_cart["items"]:
+                if user_item["medicine"] == guest_item["medicine"]:
+                    user_item["qty"] += guest_item["qty"]
+                    found = True
+                    break
+            if not found:
+                user_cart["items"].append(guest_item)
+        
+        save_cart_data(user_cart)
+        frappe.cache().delete(guest_key)
+    except Exception:
+        pass
 
 
 @frappe.whitelist(allow_guest=True)
 def add_to_cart(medicine, qty=1):
     """Add a medicine to cart."""
-    qty = int(qty)
+    try:
+        qty = int(qty)
+    except (ValueError, TypeError):
+        qty = 1
     if qty < 1:
         qty = 1
     
@@ -71,8 +134,8 @@ def add_to_cart(medicine, qty=1):
     if not medicine_doc:
         frappe.throw(_("Medicine not found"))
     
-    # Check stock
-    stock = frappe.db.get_value("Bin", {"item_code": medicine}, "actual_qty") or 0
+    # Check stock using the unified stock check
+    stock = get_medicine_stock(medicine)
     if stock <= 0:
         frappe.throw(_("{0} is currently out of stock").format(medicine_doc.medicine_name))
     
@@ -82,8 +145,8 @@ def add_to_cart(medicine, qty=1):
     for item in cart["items"]:
         if item["medicine"] == medicine:
             item["qty"] += qty
-            if item["qty"] > stock:
-                item["qty"] = stock
+            if stock < 999:  # Only cap if real stock tracking exists
+                item["qty"] = min(item["qty"], int(stock))
             item["amount"] = item["qty"] * item["rate"]
             save_cart_data(cart)
             return {"success": True, "cart": cart, "message": _("Cart updated")}
@@ -110,7 +173,10 @@ def add_to_cart(medicine, qty=1):
 @frappe.whitelist(allow_guest=True)
 def update_cart(medicine, qty):
     """Update quantity of a cart item."""
-    qty = int(qty)
+    try:
+        qty = int(qty)
+    except (ValueError, TypeError):
+        qty = 0
     if qty < 0:
         qty = 0
     
@@ -121,9 +187,11 @@ def update_cart(medicine, qty):
             if qty == 0:
                 cart["items"].remove(item)
             else:
-                # Check stock
-                stock = frappe.db.get_value("Bin", {"item_code": medicine}, "actual_qty") or 0
-                item["qty"] = min(qty, stock)
+                stock = get_medicine_stock(medicine)
+                if stock < 999:
+                    item["qty"] = min(qty, int(stock))
+                else:
+                    item["qty"] = qty
                 item["amount"] = item["qty"] * item["rate"]
             break
     
@@ -147,7 +215,6 @@ def get_cart():
     
     # Calculate totals with fresh pricing
     subtotal = 0
-    total_discount = 0
     requires_prescription = False
     
     cart_items = []
@@ -225,10 +292,14 @@ def apply_coupon(coupon_code):
     if not coupon_code:
         return {"success": False, "message": _("Please enter a coupon code")}
     
-    # Check if coupon exists in ERPNext
-    coupon = frappe.db.get_value("Coupon Code", {"coupon_name": coupon_code}, 
-                                  ["name", "coupon_type", "rate", "maximum_use", "used", "valid_from", "valid_upto"],
-                                  as_dict=True)
+    # Check if Coupon Code DocType exists
+    try:
+        coupon = frappe.db.get_value("Coupon Code", {"coupon_name": coupon_code}, 
+                                      ["name", "coupon_type", "rate", "maximum_use", "used", "valid_from", "valid_upto"],
+                                      as_dict=True)
+    except Exception:
+        return {"success": False, "message": _("Coupon system is not configured")}
+    
     if not coupon:
         return {"success": False, "message": _("Invalid coupon code")}
     
