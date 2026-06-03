@@ -180,6 +180,7 @@ $(document).ready(function() {
         // Show order error from URL if present
         if (orderError) {
             showToast(decodeURIComponent(orderError), 'danger');
+            history.replaceState({}, document.title, window.location.pathname);
         }
     } else {
         // Fall back to API call (cart.py whitelist works on server)
