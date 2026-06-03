@@ -591,20 +591,13 @@ def razorpay_pay(order_id):
         key_secret = settings.razorpay_key_secret if settings else None
 
         if not key_id or not key_secret:
-            # Return test mode data so checkout JS still works for demo
-            import secrets
+            # Test mode — no real keys configured, submit order directly
+            # Return test_mode flag so frontend bypasses Razorpay checkout
+            # and calls razorpay_verify directly to submit the order
             return {
                 "success": True,
-                "gateway": "razorpay",
-                "key_id": "rzp_test_XXXXXXXXXXXXXXXX",
-                "amount": int(so.grand_total * 100),
-                "currency": "INR",
+                "test_mode": True,
                 "order_id": so.name,
-                "customer_name": so.customer_name,
-                "customer_email": email,
-                "customer_phone": mobile,
-                "prefill": {"name": so.customer_name, "email": email, "contact": mobile},
-                "theme": {"color": "#2563eb"},
             }
 
         import razorpay
