@@ -581,11 +581,10 @@ def razorpay_pay(order_id):
         email = frappe.db.get_value("User", user, "email") or ""
         mobile = frappe.db.get_value("User", user, "mobile_no") or ""
 
-        # Get Razorpay credentials (safely - record may not exist yet)
+        # Get Razorpay credentials (safely — Single doctype record may not exist yet)
         settings = None
         try:
-            if frappe.db.exists("Pharmacy Settings", "Pharmacy Settings"):
-                settings = frappe.get_single("Pharmacy Settings")
+            settings = frappe.get_single("Pharmacy Settings")
         except Exception:
             pass
         key_id = settings.razorpay_key_id if settings else None
@@ -649,8 +648,7 @@ def razorpay_verify(order_id, razorpay_payment_id, razorpay_order_id, razorpay_s
         try:
             settings = None
             try:
-                if frappe.db.exists("Pharmacy Settings", "Pharmacy Settings"):
-                    settings = frappe.get_single("Pharmacy Settings")
+                settings = frappe.get_single("Pharmacy Settings")
             except Exception:
                 pass
             key_secret = settings.razorpay_key_secret if settings else None
