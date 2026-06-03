@@ -154,32 +154,31 @@ let uploadedPrescription = null;
 
 $(document).ready(function() {
     // Use server-side rendered data (avoids API whitelist issue)
-    var initialData = null;
-    try {
-        initialData = JSON.parse('{{ checkout_data | safe }}');
-    } catch(e) {}
+    // Embed JSON directly as a JS object literal (no JSON.parse needed)
+    var checkoutPageData = {{ checkout_data | safe }};
     
-    if (initialData && initialData.cart) {
-        // Check if cart is empty
-        if (initialData.cart.is_empty) {
-            window.location.href = '/cart';
-            return;
-        }
-        
-        // Render with server-side data
-        renderAddresses(initialData.addresses || []);
-        renderPaymentOptions();
-        renderCheckoutSummary(initialData.cart);
-        
-        if (initialData.cart.requires_prescription) {
-            $('#prescriptionSection').show();
-        }
-    } else if (initialData && initialData.error) {
-        // Server-side error - show on page
-        showErrorOnPage(initialData.error);
-    } else {
-        // No data - reload page or redirect to cart
+    if (!checkoutPageData) {
         window.location.href = '/cart';
+        return;
+    }
+    
+    if (checkoutPageData.error) {
+        showErrorOnPage(checkoutPageData.error);
+        return;
+    }
+    
+    if (!checkoutPageData.cart || checkoutPageData.cart.is_empty) {
+        window.location.href = '/cart';
+        return;
+    }
+    
+    // Render with server-side data
+    renderAddresses(checkoutPageData.addresses || []);
+    renderPaymentOptions();
+    renderCheckoutSummary(checkoutPageData.cart);
+    
+    if (checkoutPageData.cart.requires_prescription) {
+        $('#prescriptionSection').show();
     }
 });
 
