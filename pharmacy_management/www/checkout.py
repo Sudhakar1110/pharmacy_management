@@ -1,8 +1,23 @@
 import frappe
 import json
-from frappe.utils.response import json_handler
+from decimal import Decimal
+from datetime import date, datetime
 
 no_cache = 1
+
+
+def _make_json_safe(obj):
+    """Recursively convert non-JSON-safe types to plain JSON-compatible types."""
+    if isinstance(obj, (date, datetime)):
+        return obj.isoformat()
+    if isinstance(obj, Decimal):
+        return float(obj)
+    if isinstance(obj, dict):
+        return {k: _make_json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_make_json_safe(v) for v in obj]
+    return obj
+
 
 def get_context(context):
     """Render the checkout page."""
@@ -19,16 +34,6 @@ def get_context(context):
     try:
         from pharmacy_management.api.cart import get_cart
         cart_data = get_cart()
-
-        # Convert Decimal/float values to plain floats for safe JSON serialization
-        if cart_data.get("items"):
-            for item in cart_data["items"]:
-                for key in ("rate", "mrp", "amount"):
-                    if key in item and item[key] is not None:
-                        item[key] = float(item[key])
-        for key in ("subtotal", "total_saving", "coupon_discount", "shipping", "grand_total"):
-            if key in cart_data and cart_data[key] is not None:
-                cart_data[key] = float(cart_data[key])
 
         user = frappe.session.user
         email = frappe.db.get_value("User", user, "email") or user
@@ -62,11 +67,11 @@ def get_context(context):
                 pass
 
         checkout_data = {
-            "cart": cart_data,
+            "cart": _make_json_safe(cart_data),
             "user": {"full_name": full_name, "email": email, "mobile": frappe.db.get_value("User", user, "mobile_no") or ""},
             "addresses": addresses,
         }
-        context.checkout_data = json.dumps(checkout_data, default=json_handler)
+        context.checkout_data = json.dumps(checkout_data)
     except Exception as e:
         frappe.log_error(f"Checkout data error: {e}", "Pharmacy Checkout")
         context.checkout_data = json.dumps({"error": str(e)})
