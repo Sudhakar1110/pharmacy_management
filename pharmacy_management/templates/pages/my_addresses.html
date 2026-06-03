@@ -64,7 +64,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveAddress()">Save Address</button>
+                <button type="button" class="btn btn-primary" id="saveAddressBtn" onclick="saveAddress()">Save Address</button>
             </div>
         </div>
     </div>
@@ -111,7 +111,10 @@ function loadAddresses() {
                                 ${addr.city}, ${addr.state} - ${addr.pincode}<br>
                                 ${addr.phone ? `<small>Phone: ${addr.phone}</small>` : ''}
                             </p>
-                            <div class="mt-2">
+                            <div class="mt-2 d-flex gap-2">
+                                <button class="btn btn-outline-primary btn-sm" onclick="editAddress('${addr.name}')">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
                                 <button class="btn btn-outline-danger btn-sm" onclick="deleteAddress('${addr.name}')">
                                     <i class="bi bi-trash"></i> Delete
                                 </button>
@@ -124,6 +127,8 @@ function loadAddresses() {
         $('#addressesContent').html(html);
     });
 }
+
+let editingAddressName = null;
 
 function saveAddress() {
     const data = {
@@ -142,19 +147,66 @@ function saveAddress() {
         return;
     }
     
+    // If editing, include the address_name
+    if (editingAddressName) {
+        data.address_name = editingAddressName;
+    }
+    
+    const btn = $('#saveAddressBtn');
+    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Saving...');
+    
+    var isAddressUpdate = !!editingAddressName;
     $.post('/api/method/pharmacy_management.api.customer.save_address', data, function(res) {
         if (res.message.success) {
             $('#addAddressModal').modal('hide');
             $('#addressForm')[0].reset();
-            showToast('Address added!', 'success');
+            editingAddressName = null;
+            showToast(isAddressUpdate ? 'Address updated!' : 'Address added!', 'success');
             loadAddresses();
         } else {
             showToast(res.message.message || 'Failed to save address. Please try again.', 'danger');
         }
     }).fail(function(xhr) {
         showToast(xhr.responseJSON?.message || 'Error saving address', 'danger');
+    }).always(function() {
+        btn.prop('disabled', false).html('Save Address');
     });
 }
+
+function editAddress(name) {
+    // Fetch all addresses and find the one to edit
+    $.get('/api/method/pharmacy_management.api.customer.get_addresses', function(res) {
+        const addresses = res.message.addresses;
+        const addr = addresses.find(function(a) { return a.name === name; });
+        if (!addr) {
+            showToast('Address not found', 'danger');
+            return;
+        }
+        
+        // Pre-fill the modal fields
+        editingAddressName = addr.name;
+        $('#addrLine1').val(addr.address_line1 || '');
+        $('#addrLine2').val(addr.address_line2 || '');
+        $('#addrCity').val(addr.city || '');
+        $('#addrState').val(addr.state || '');
+        $('#addrPincode').val(addr.pincode || '');
+        $('#addrCountry').val(addr.country || 'India');
+        $('#addrPhone').val(addr.phone || '');
+        
+        // Update modal title
+        $('#addAddressModal .modal-title').text('Edit Address');
+        
+        // Open the modal
+        $('#addAddressModal').modal('show');
+    });
+}
+
+// Reset the modal when it's hidden (so next time it's for adding)
+$('#addAddressModal').on('hidden.bs.modal', function() {
+    $('#addressForm')[0].reset();
+    editingAddressName = null;
+    $('#addAddressModal .modal-title').text('Add New Address');
+});
 
 function deleteAddress(name) {
     if (!confirm('Delete this address?')) return;

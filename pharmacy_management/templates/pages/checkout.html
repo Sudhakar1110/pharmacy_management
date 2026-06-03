@@ -525,7 +525,8 @@ $('#checkoutForm').on('submit', function(e) {
         }, function(rxRes) {
             var ref = rxRes.message && rxRes.message.success ? rxRes.message.prescription_id : null;
             doPlaceOrder(ref);
-        }).fail(function() {
+        }).fail(function(xhr) {
+            showToast('Failed to upload prescription. You can upload it later from your orders page.', 'warning');
             doPlaceOrder(null);
         });
     } else {
