@@ -262,57 +262,87 @@
 
     function addToCart() {
         let qty = $('#qtyInput').val();
-        $.post('/api/method/pharmacy_management.api.cart.add_to_cart', {
-            medicine: '{{ medicine.name }}',
-            qty: qty
-        }, function(res) {
-            if (res.message.success) {
-                showToast('Added to cart!', 'success');
-                updateCartBadge();
+        frappe.call({
+            method: 'pharmacy_management.api.cart.add_to_cart',
+            args: {
+                medicine: '{{ medicine.name }}',
+                qty: qty
+            },
+            callback: function(r) {
+                if (r.message && r.message.success) {
+                    showToast('Added to cart!', 'success');
+                    updateCartBadge();
+                } else {
+                    showToast(r.message?.message || 'Error adding to cart', 'danger');
+                }
+            },
+            error: function(r) {
+                let errMsg = 'Error adding to cart';
+                if (r && r.responseJSON && r.responseJSON._server_messages) {
+                    try {
+                        const msgs = JSON.parse(r.responseJSON._server_messages);
+                        errMsg = JSON.parse(msgs[0]).message || errMsg;
+                    } catch(e) {}
+                }
+                showToast(errMsg, 'danger');
             }
-        }).fail(function(xhr) {
-            showToast(xhr.responseJSON?.message || 'Error', 'danger');
         });
     }
 
     function buyNow() {
         let qty = $('#qtyInput').val();
-        $.post('/api/method/pharmacy_management.api.cart.add_to_cart', {
-            medicine: '{{ medicine.name }}',
-            qty: qty
-        }, function(res) {
-            if (res.message.success) {
-                window.location.href = '/cart';
+        frappe.call({
+            method: 'pharmacy_management.api.cart.add_to_cart',
+            args: {
+                medicine: '{{ medicine.name }}',
+                qty: qty
+            },
+            callback: function(r) {
+                if (r.message && r.message.success) {
+                    window.location.href = '/cart';
+                } else {
+                    showToast(r.message?.message || 'Error adding to cart', 'danger');
+                }
             }
         });
     }
 
     function toggleWishlist() {
         {% if in_wishlist %}
-        $.post('/api/method/pharmacy_management.api.wishlist.remove_from_wishlist', {
-            medicine: '{{ medicine.name }}'
-        }, function() {
-            $('#wishlistBtn i').attr('class', 'bi bi-heart');
-            showToast('Removed from wishlist', 'info');
+        frappe.call({
+            method: 'pharmacy_management.api.wishlist.remove_from_wishlist',
+            args: { medicine: '{{ medicine.name }}' },
+            callback: function() {
+                $('#wishlistBtn i').attr('class', 'bi bi-heart');
+                showToast('Removed from wishlist', 'info');
+            }
         });
         {% else %}
-        $.post('/api/method/pharmacy_management.api.wishlist.add_to_wishlist', {
-            medicine: '{{ medicine.name }}'
-        }, function() {
-            $('#wishlistBtn i').attr('class', 'bi bi-heart-fill');
-            showToast('Added to wishlist!', 'success');
+        frappe.call({
+            method: 'pharmacy_management.api.wishlist.add_to_wishlist',
+            args: { medicine: '{{ medicine.name }}' },
+            callback: function() {
+                $('#wishlistBtn i').attr('class', 'bi bi-heart-fill');
+                showToast('Added to wishlist!', 'success');
+            }
         });
         {% endif %}
     }
 
     function addToCartDirect(medicine) {
-        $.post('/api/method/pharmacy_management.api.cart.add_to_cart', {
-            medicine: medicine,
-            qty: 1
-        }, function(res) {
-            if (res.message.success) {
-                showToast('Added to cart!', 'success');
-                updateCartBadge();
+        frappe.call({
+            method: 'pharmacy_management.api.cart.add_to_cart',
+            args: {
+                medicine: medicine,
+                qty: 1
+            },
+            callback: function(r) {
+                if (r.message && r.message.success) {
+                    showToast('Added to cart!', 'success');
+                    updateCartBadge();
+                } else {
+                    showToast(r.message?.message || 'Error', 'danger');
+                }
             }
         });
     }

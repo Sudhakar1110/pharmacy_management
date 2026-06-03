@@ -87,25 +87,48 @@ function loadWishlist() {
 }
 
 function removeFromWishlist(medicine) {
-    $.post('/api/method/pharmacy_management.api.wishlist.remove_from_wishlist', {
-        medicine: medicine
-    }, function(res) {
-        if (res.message.success) {
-            showToast('Removed from wishlist', 'info');
-            loadWishlist();
-            updateWishlistBadge();
+    frappe.call({
+        method: 'pharmacy_management.api.wishlist.remove_from_wishlist',
+        args: { medicine: medicine },
+        callback: function(r) {
+            if (r.message && r.message.success) {
+                showToast('Removed from wishlist', 'info');
+                loadWishlist();
+                updateWishlistBadge();
+            } else {
+                showToast(r.message?.message || 'Error', 'danger');
+            }
+        },
+        error: function() {
+            showToast('Error removing from wishlist', 'danger');
         }
     });
 }
 
 function addToCart(medicine) {
-    $.post('/api/method/pharmacy_management.api.cart.add_to_cart', {
-        medicine: medicine,
-        qty: 1
-    }, function(res) {
-        if (res.message.success) {
-            showToast('Added to cart!', 'success');
-            updateCartBadge();
+    frappe.call({
+        method: 'pharmacy_management.api.cart.add_to_cart',
+        args: {
+            medicine: medicine,
+            qty: 1
+        },
+        callback: function(r) {
+            if (r.message && r.message.success) {
+                showToast('Added to cart!', 'success');
+                updateCartBadge();
+            } else {
+                showToast(r.message?.message || 'Error', 'danger');
+            }
+        },
+        error: function(r) {
+            let errMsg = 'Error adding to cart';
+            if (r && r.responseJSON && r.responseJSON._server_messages) {
+                try {
+                    const msgs = JSON.parse(r.responseJSON._server_messages);
+                    errMsg = JSON.parse(msgs[0]).message || errMsg;
+                } catch(e) {}
+            }
+            showToast(errMsg, 'danger');
         }
     });
 }

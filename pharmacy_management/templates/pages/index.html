@@ -263,16 +263,30 @@ $(document).ready(function() {
 });
 
 function addToCartDirect(medicine) {
-    $.post('/api/method/pharmacy_management.api.cart.add_to_cart', {
-        medicine: medicine,
-        qty: 1
-    }, function(res) {
-        if (res.message.success) {
-            showToast('Added to cart!', 'success');
-            updateCartBadge();
+    frappe.call({
+        method: 'pharmacy_management.api.cart.add_to_cart',
+        args: {
+            medicine: medicine,
+            qty: 1
+        },
+        callback: function(r) {
+            if (r.message && r.message.success) {
+                showToast('Added to cart!', 'success');
+                updateCartBadge();
+            } else {
+                showToast(r.message?.message || 'Error', 'danger');
+            }
+        },
+        error: function(r) {
+            let errMsg = 'Error adding to cart';
+            if (r && r.responseJSON && r.responseJSON._server_messages) {
+                try {
+                    const msgs = JSON.parse(r.responseJSON._server_messages);
+                    errMsg = JSON.parse(msgs[0]).message || errMsg;
+                } catch(e) {}
+            }
+            showToast(errMsg, 'danger');
         }
-    }).fail(function(xhr) {
-        showToast(xhr.responseJSON?.message || 'Error', 'danger');
     });
 }
 
