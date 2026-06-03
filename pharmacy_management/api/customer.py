@@ -2,7 +2,7 @@ import frappe
 from frappe import _
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_customer_orders(page=1, limit=10):
     """Get orders for the current customer."""
     user = frappe.session.user
@@ -52,7 +52,7 @@ def get_customer_orders(page=1, limit=10):
     }
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_order_detail(order_id):
     """Get full details of a single order."""
     if not frappe.db.exists("Sales Order", order_id):
@@ -105,7 +105,7 @@ def get_order_detail(order_id):
     }
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_customer_profile():
     """Get customer profile info."""
     user = frappe.session.user
@@ -142,7 +142,7 @@ def get_customer_profile():
     return profile
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def update_profile(full_name=None, mobile=None, date_of_birth=None, gender=None, blood_group=None):
     """Update customer profile."""
     user = frappe.session.user
@@ -170,7 +170,7 @@ def update_profile(full_name=None, mobile=None, date_of_birth=None, gender=None,
     return {"success": True, "message": _("Profile updated successfully")}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_addresses():
     """Get all addresses for the current customer."""
     user = frappe.session.user
@@ -206,7 +206,7 @@ def get_addresses():
     return {"addresses": addresses}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def save_address(address_line1, city, state, pincode, country="India", address_line2=None, phone=None, is_shipping=0, address_name=None):
     """Create or update a customer address."""
     user = frappe.session.user
@@ -255,7 +255,7 @@ def save_address(address_line1, city, state, pincode, country="India", address_l
     return {"success": True, "address_id": addr.name, "message": _("Address added successfully")}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def delete_address(address_name):
     """Delete a customer address."""
     if not frappe.db.exists("Address", address_name):
@@ -265,7 +265,7 @@ def delete_address(address_name):
     return {"success": True, "message": _("Address deleted")}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def track_order(order_id):
     """Track order delivery status."""
     if not frappe.db.exists("Sales Order", order_id):
