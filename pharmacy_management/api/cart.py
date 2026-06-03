@@ -465,8 +465,14 @@ def _place_order(address_name=None, payment_method="COD", prescription_ref=None,
         except Exception:
             pass
 
-    so.db_set("custom_order_source", "Website", update_modified=False)
-    so.db_set("custom_payment_method", payment_method, update_modified=False)
+    try:
+        so.db_set("custom_order_source", "Website", update_modified=False)
+    except Exception:
+        pass
+    try:
+        so.db_set("custom_payment_method", payment_method, update_modified=False)
+    except Exception:
+        pass
 
     if payment_method == "COD":
         so.submit()
