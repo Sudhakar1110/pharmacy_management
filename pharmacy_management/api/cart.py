@@ -18,7 +18,7 @@ def get_cart_key():
 def get_cart_data():
     """Retrieve cart from cache."""
     cart_key = get_cart_key()
-    cart = frappe.cache().get(cart_key)
+    cart = frappe.cache().get_value(cart_key)
     if not cart:
         cart = {
             "items": [],
@@ -31,7 +31,7 @@ def get_cart_data():
 def save_cart_data(cart):
     """Save cart to cache (24 hour expiry)."""
     cart_key = get_cart_key()
-    frappe.cache().set(cart_key, cart, expires_in_sec=86400)
+    frappe.cache().set_value(cart_key, cart, expires_in_sec=86400)
 
 
 def get_medicine_stock(medicine_name):
@@ -94,7 +94,7 @@ def merge_guest_cart_to_user():
     
     try:
         guest_key = f"pharmacy_cart:guest:{frappe.session.sid}"
-        guest_cart = frappe.cache().get(guest_key)
+        guest_cart = frappe.cache().get_value(guest_key)
         if not guest_cart or not guest_cart.get("items"):
             return
         
@@ -111,7 +111,7 @@ def merge_guest_cart_to_user():
                 user_cart["items"].append(guest_item)
         
         save_cart_data(user_cart)
-        frappe.cache().delete(guest_key)
+        frappe.cache().delete_value(guest_key)
     except Exception:
         pass
 
@@ -282,7 +282,7 @@ def get_cart():
 def clear_cart():
     """Clear entire cart."""
     cart_key = get_cart_key()
-    frappe.cache().delete(cart_key)
+    frappe.cache().delete_value(cart_key)
     return {"success": True, "message": _("Cart cleared")}
 
 
@@ -351,3 +351,4 @@ def get_cart_count():
     cart = get_cart_data()
     count = sum(item["qty"] for item in cart.get("items", []))
     return {"count": count}
+

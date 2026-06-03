@@ -17,12 +17,12 @@ def add_to_wishlist(medicine):
         frappe.throw(_("Medicine not found"))
     
     key = get_wishlist_key()
-    wishlist = frappe.cache().get(key) or []
+    wishlist = frappe.cache().get_value(key) or []
     
     if medicine not in wishlist:
         wishlist.append(medicine)
     
-    frappe.cache().set(key, wishlist, expires_in_sec=86400 * 30)  # 30 days
+    frappe.cache().set_value(key, wishlist, expires_in_sec=86400 * 30)  # 30 days
     return {"success": True, "message": _("Added to wishlist")}
 
 
@@ -30,12 +30,12 @@ def add_to_wishlist(medicine):
 def remove_from_wishlist(medicine):
     """Remove medicine from wishlist."""
     key = get_wishlist_key()
-    wishlist = frappe.cache().get(key) or []
+    wishlist = frappe.cache().get_value(key) or []
     
     if medicine in wishlist:
         wishlist.remove(medicine)
     
-    frappe.cache().set(key, wishlist, expires_in_sec=86400 * 30)
+    frappe.cache().set_value(key, wishlist, expires_in_sec=86400 * 30)
     return {"success": True, "message": _("Removed from wishlist")}
 
 
@@ -43,7 +43,7 @@ def remove_from_wishlist(medicine):
 def get_wishlist():
     """Get wishlist with full medicine details."""
     key = get_wishlist_key()
-    medicine_names = frappe.cache().get(key) or []
+    medicine_names = frappe.cache().get_value(key) or []
     
     if not medicine_names:
         return {"wishlist": [], "is_empty": True}
@@ -68,7 +68,7 @@ def get_wishlist():
 def is_in_wishlist(medicine):
     """Check if a medicine is in the wishlist."""
     key = get_wishlist_key()
-    wishlist = frappe.cache().get(key) or []
+    wishlist = frappe.cache().get_value(key) or []
     return {"in_wishlist": medicine in wishlist}
 
 
@@ -79,13 +79,14 @@ def merge_guest_wishlist():
         return
     
     guest_key = f"pharmacy_wishlist:guest:{frappe.session.sid}"
-    guest_wishlist = frappe.cache().get(guest_key) or []
+    guest_wishlist = frappe.cache().get_value(guest_key) or []
     if not guest_wishlist:
         return
     
     user_key = get_wishlist_key()
-    user_wishlist = frappe.cache().get(user_key) or []
+    user_wishlist = frappe.cache().get_value(user_key) or []
     
     merged = list(set(user_wishlist + guest_wishlist))
-    frappe.cache().set(user_key, merged, expires_in_sec=86400 * 30)
-    frappe.cache().delete(guest_key)
+    frappe.cache().set_value(user_key, merged, expires_in_sec=86400 * 30)
+    frappe.cache().delete_value(guest_key)
+
