@@ -159,50 +159,71 @@ let selectedPayment = 'COD';
 let uploadedPrescription = null;
 
 $(document).ready(function() {
-    // Read server-side rendered data from JSON script tag
+    // Try server-side rendered data first, fall back to API call
     var checkoutPageData = null;
     try {
         var dataEl = document.getElementById('checkoutDataStore');
-        if (dataEl) {
+        if (dataEl && dataEl.textContent.trim()) {
             checkoutPageData = JSON.parse(dataEl.textContent);
         }
     } catch(e) {
         console.error('Failed to parse checkout data', e);
     }
     
-    if (!checkoutPageData) {
-        // Data not available - show error on page instead of silently redirecting
-        showErrorOnPage('Could not load checkout data. Please try refreshing the page.');
+    if (checkoutPageData) {
+        // Server-side data loaded successfully - render it
+        handleCheckoutData(checkoutPageData);
+    } else {
+        // Fall back to API call (cart.py whitelist works on server)
+        console.log('Server data not available, loading via API...');
+        loadCheckoutViaAPI();
+    }
+});
+
+function handleCheckoutData(data) {
+    if (data.error) {
+        showErrorOnPage(data.error);
         return;
     }
     
-    if (checkoutPageData.error) {
-        showErrorOnPage(checkoutPageData.error);
-        return;
-    }
-    
-    if (!checkoutPageData.cart || checkoutPageData.cart.is_empty) {
-        if (!checkoutPageData.order_error) {
-            // Cart is empty - redirect to cart page
+    if (!data.cart || data.cart.is_empty) {
+        if (!data.order_error) {
             window.location.href = '/cart';
             return;
         }
     }
     
     // Show order placement error if present
-    if (checkoutPageData.order_error) {
-        showToast(checkoutPageData.order_error, 'danger');
+    if (data.order_error) {
+        showToast(data.order_error, 'danger');
     }
     
-    // Render with server-side data
-    renderAddresses(checkoutPageData.addresses || []);
+    // Render with data
+    renderAddresses(data.addresses || []);
     renderPaymentOptions();
-    renderCheckoutSummary(checkoutPageData.cart);
+    renderCheckoutSummary(data.cart);
     
-    if (checkoutPageData.cart.requires_prescription) {
+    if (data.cart && data.cart.requires_prescription) {
         $('#prescriptionSection').show();
     }
-});
+}
+
+function loadCheckoutViaAPI() {
+    $.get('/api/method/pharmacy_management.api.cart.get_checkout_summary', function(res) {
+        var data = res.message;
+        if (data && data.cart) {
+            handleCheckoutData(data);
+        } else {
+            showErrorOnPage('Could not load checkout data. Please try refreshing the page.');
+        }
+    }).fail(function(xhr) {
+        var msg = 'Could not load checkout data. Please try refreshing the page.';
+        try {
+            msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : msg;
+        } catch(e) {}
+        showErrorOnPage(msg);
+    });
+}
 
 function showErrorOnPage(msg) {
     $('#addressSection, #paymentOptions, #checkoutSummary').html(`

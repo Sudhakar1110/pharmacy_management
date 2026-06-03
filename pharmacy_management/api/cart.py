@@ -352,3 +352,51 @@ def get_cart_count():
     count = sum(item["qty"] for item in cart.get("items", []))
     return {"count": count}
 
+
+@frappe.whitelist(allow_guest=True)
+def get_checkout_summary():
+    """Get checkout summary with cart, user info, and addresses."""
+    cart = get_cart()
+
+    user = frappe.session.user
+    email = frappe.db.get_value("User", user, "email") or user
+    full_name = frappe.db.get_value("User", user, "full_name") or user
+
+    # Get user addresses safely
+    customer = frappe.db.get_value("Customer", {"email_id": email}, "name")
+    addresses = []
+    if customer:
+        try:
+            address_links = frappe.get_all("Dynamic Link",
+                filters={"link_doctype": "Customer", "link_name": customer, "parenttype": "Address"},
+                fields=["parent"])
+            for link in address_links:
+                try:
+                    addr = frappe.get_doc("Address", link.parent)
+                    addresses.append({
+                        "name": addr.name,
+                        "address_line1": addr.address_line1,
+                        "address_line2": addr.address_line2,
+                        "city": addr.city,
+                        "state": addr.state,
+                        "pincode": addr.pincode,
+                        "phone": addr.phone,
+                        "email_id": addr.email_id,
+                        "is_shipping": getattr(addr, "is_primary_shipping_address", 0),
+                        "is_billing": getattr(addr, "is_primary_billing_address", 0),
+                    })
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
+    return {
+        "cart": cart,
+        "user": {
+            "full_name": full_name,
+            "email": email,
+            "mobile": frappe.db.get_value("User", user, "mobile_no") or "",
+        },
+        "addresses": addresses,
+    }
+
