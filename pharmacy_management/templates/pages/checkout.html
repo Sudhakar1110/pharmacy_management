@@ -9,11 +9,13 @@
 
         <div class="row g-4">
             <div class="col-lg-8">
-                <form id="checkoutForm">
+                <form id="checkoutForm" action="/checkout" method="POST">
+                    <input type="hidden" name="address_name" id="hiddenAddress">
+                    <input type="hidden" name="payment_method" id="hiddenPayment">
+                    <input type="hidden" name="notes" id="hiddenNotes">
+                    <input type="hidden" name="prescription_ref" id="hiddenPrescriptionRef">
                     <!-- Delivery Address -->
                     <div class="card border-0 shadow-sm mb-3">
-                        <div class="card-body p-4">
-                            <h5 class="fw-bold mb-3"><i class="bi bi-geo-alt"></i> Delivery Address</h5>
                             <div id="addressSection">
                                 <div class="text-center py-3">
                                     <div class="spinner-border text-primary" role="status"></div>
@@ -386,67 +388,41 @@ $('#prescriptionUpload').on('change', function(e) {
     reader.readAsDataURL(file);
 });
 
-// Place order
+// Place order - submit form directly via POST (server-side processing, no API call)
 $('#checkoutForm').on('submit', function(e) {
-    e.preventDefault();
-    const btn = $('#placeOrderBtn');
-    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Placing Order...');
-    
     if (!selectedAddress) {
+        e.preventDefault();
         showToast('Please select a delivery address', 'warning');
-        btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order');
         return;
     }
     
-    // First upload prescription if needed
-    function doPlaceOrder() {
-        const orderData = {
-            address_name: selectedAddress,
-            payment_method: selectedPayment,
-            notes: $('#orderNotes').val(),
-        };
-        
-        // If prescription was uploaded
-        if ($('#prescriptionSection').is(':visible') && uploadedPrescription) {
-            // Upload prescription first
-            $.post('/api/method/pharmacy_management.api.prescription.upload_prescription', {
-                image: uploadedPrescription,
-                notes: $('#orderNotes').val()
-            }, function(rxRes) {
-                if (rxRes.message.success) {
-                    orderData.prescription_ref = rxRes.message.prescription_id;
-                }
-                createOrder(orderData);
-            }).fail(function() {
-                createOrder(orderData);
-            });
-        } else {
-            createOrder(orderData);
-        }
-    }
+    // Set hidden fields before submitting
+    $('#hiddenAddress').val(selectedAddress);
+    $('#hiddenPayment').val(selectedPayment);
+    $('#hiddenNotes').val($('#orderNotes').val());
     
-    doPlaceOrder();
-});
-
-function createOrder(data) {
-    $.post('/api/method/pharmacy_management.api.checkout.create_order', data, function(res) {
-        const result = res.message;
-        if (result.success) {
-            if (result.payment_required && result.payment_data) {
-                // Show payment modal
-                $('#paymentModal').modal('show');
-                initiatePayment(result);
-            } else {
-                // Order placed (COD)
-                window.location.href = `/track-order/${result.order_id}?success=1`;
-            }
-        }
-    }).fail(function(xhr) {
+    // If prescription was uploaded, upload it first then submit
+    if ($('#prescriptionSection').is(':visible') && uploadedPrescription) {
+        e.preventDefault();
         const btn = $('#placeOrderBtn');
-        btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order');
-        showToast(xhr.responseJSON?.message || 'Error placing order', 'danger');
-    });
-}
+        btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Uploading prescription...');
+        
+        $.post('/api/method/pharmacy_management.api.prescription.upload_prescription', {
+            image: uploadedPrescription,
+            notes: $('#orderNotes').val()
+        }, function(rxRes) {
+            if (rxRes.message.success) {
+                $('#hiddenPrescriptionRef').val(rxRes.message.prescription_id);
+            }
+            // Now submit the form
+            document.getElementById('checkoutForm').submit();
+        }).fail(function() {
+            // Submit anyway even if prescription upload fails
+            document.getElementById('checkoutForm').submit();
+        });
+    }
+    // If no prescription needed, the form submits naturally
+});
 
 function initiatePayment(orderResult) {
     const pd = orderResult.payment_data;
