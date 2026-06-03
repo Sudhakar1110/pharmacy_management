@@ -692,17 +692,14 @@ def razorpay_verify(order_id, razorpay_payment_id, razorpay_order_id, razorpay_s
         # Verify signature
         key_secret = frappe.db.get_single_value("Pharmacy Settings", "razorpay_key_secret") or None
 
-            if key_secret:
-                import razorpay
-                params_dict = {
-                    "razorpay_order_id": razorpay_order_id,
-                    "razorpay_payment_id": razorpay_payment_id,
-                    "razorpay_signature": razorpay_signature,
-                }
-                razorpay.Utility.verify_payment_signature(params_dict, key_secret)
-        except Exception as e:
-            frappe.log_error(f"Razorpay signature verify failed: {e}", "Payment")
-            return {"success": False, "message": _("Payment verification failed")}
+        if key_secret:
+            import razorpay
+            params_dict = {
+                "razorpay_order_id": razorpay_order_id,
+                "razorpay_payment_id": razorpay_payment_id,
+                "razorpay_signature": razorpay_signature,
+            }
+            razorpay.Utility.verify_payment_signature(params_dict, key_secret)
 
         # Complete the order
         so = frappe.get_doc("Sales Order", order_id)
