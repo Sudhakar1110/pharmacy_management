@@ -179,8 +179,15 @@ $(document).ready(function() {
     }
     
     if (!checkoutPageData.cart || checkoutPageData.cart.is_empty) {
-        window.location.href = '/cart';
-        return;
+        if (!checkoutPageData.order_error) {
+            window.location.href = '/cart';
+            return;
+        }
+    }
+    
+    // Show order placement error if present
+    if (checkoutPageData.order_error) {
+        showToast(checkoutPageData.order_error, 'danger');
     }
     
     // Render with server-side data
@@ -396,6 +403,10 @@ $('#checkoutForm').on('submit', function(e) {
         return;
     }
     
+    // Disable button immediately
+    const btn = $('#placeOrderBtn');
+    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Placing Order...');
+    
     // Set hidden fields before submitting
     $('#hiddenAddress').val(selectedAddress);
     $('#hiddenPayment').val(selectedPayment);
@@ -404,8 +415,7 @@ $('#checkoutForm').on('submit', function(e) {
     // If prescription was uploaded, upload it first then submit
     if ($('#prescriptionSection').is(':visible') && uploadedPrescription) {
         e.preventDefault();
-        const btn = $('#placeOrderBtn');
-        btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Uploading prescription...');
+        btn.html('<span class="spinner-border spinner-border-sm"></span> Uploading prescription...');
         
         $.post('/api/method/pharmacy_management.api.prescription.upload_prescription', {
             image: uploadedPrescription,
