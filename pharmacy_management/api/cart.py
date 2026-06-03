@@ -517,6 +517,7 @@ def _place_order(address_name=None, payment_method="COD", prescription_ref=None,
             "payment_method": "UPI",
             "upi_id": upi_id,
             "upi_holder_name": upi_holder,
+            "grand_total": so.grand_total,
         }
     else:
         create_order_status_record(so, "Pending Payment")
