@@ -169,6 +169,52 @@
     
     <!-- Custom JS -->
     <script src="/assets/pharmacy_management/js/pharmacy.js"></script>
+    <script>
+        window.csrf_token = "{{ frappe.session.csrf_token }}";
+        if (typeof frappe === 'undefined') {
+            window.frappe = {};
+        }
+        frappe.csrf_token = window.csrf_token;
+        
+        // Polyfill frappe.call if missing
+        if (!frappe.call) {
+            frappe.call = function(options) {
+                return $.ajax({
+                    url: options.method ? '/api/method/' + options.method : options.url,
+                    type: options.type || 'POST',
+                    data: options.args || options.data || {},
+                    headers: {
+                        'X-Frappe-CSRF-Token': frappe.csrf_token
+                    },
+                    success: function(r) {
+                        if (options.callback) options.callback(r);
+                    },
+                    error: function(xhr) {
+                        let errMsg = 'Server Error';
+                        if (xhr && xhr.responseJSON && xhr.responseJSON._server_messages) {
+                            try {
+                                const msgs = JSON.parse(xhr.responseJSON._server_messages);
+                                errMsg = JSON.parse(msgs[0]).message || errMsg;
+                            } catch(e) {}
+                        } else if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                            errMsg = xhr.responseJSON.message;
+                        } else if (xhr && xhr.status === 403) {
+                            errMsg = 'Session expired or invalid CSRF token. Please refresh the page.';
+                        }
+                        if (options.error) {
+                            options.error(xhr);
+                        } else {
+                            if (typeof showToast !== 'undefined') {
+                                showToast(errMsg, 'danger');
+                            } else {
+                                console.error("API Error", errMsg, xhr);
+                            }
+                        }
+                    }
+                });
+            };
+        }
+    </script>
     
     {% block script %}{% endblock %}
     
@@ -194,3 +240,4 @@
     </script>
 </body>
 </html>
+
