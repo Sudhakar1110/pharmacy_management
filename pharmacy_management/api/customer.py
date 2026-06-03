@@ -209,50 +209,54 @@ def get_addresses():
 @frappe.whitelist(allow_guest=True)
 def save_address(address_line1, city, state, pincode, country="India", address_line2=None, phone=None, is_shipping=0, address_name=None):
     """Create or update a customer address."""
-    user = frappe.session.user
-    email = frappe.db.get_value("User", user, "email") or user
-    full_name = frappe.db.get_value("User", user, "full_name") or user
-    
-    customer = frappe.db.get_value("Customer", {"email_id": email}, "name")
-    if not customer:
-        customer = ensure_customer_from_user(user)
-    
-    if address_name and frappe.db.exists("Address", address_name):
-        # Update existing
-        addr = frappe.get_doc("Address", address_name)
+    try:
+        user = frappe.session.user
+        email = frappe.db.get_value("User", user, "email") or user
+        full_name = frappe.db.get_value("User", user, "full_name") or user
+
+        customer = frappe.db.get_value("Customer", {"email_id": email}, "name")
+        if not customer:
+            customer = ensure_customer_from_user(user)
+
+        if address_name and frappe.db.exists("Address", address_name):
+            # Update existing
+            addr = frappe.get_doc("Address", address_name)
+            addr.address_line1 = address_line1
+            addr.address_line2 = address_line2
+            addr.city = city
+            addr.state = state
+            addr.pincode = pincode
+            addr.country = country
+            addr.phone = phone or addr.phone
+            addr.is_primary_shipping_address = int(is_shipping)
+            addr.flags.ignore_permissions = True
+            addr.save()
+            return {"success": True, "address_id": addr.name, "message": _("Address updated")}
+
+        # Create new
+        addr = frappe.new_doc("Address")
+        addr.address_title = f"{full_name} - {city}"
+        addr.address_type = "Shipping"
         addr.address_line1 = address_line1
         addr.address_line2 = address_line2
         addr.city = city
         addr.state = state
         addr.pincode = pincode
         addr.country = country
-        addr.phone = phone or addr.phone
+        addr.phone = phone or ""
+        addr.email_id = email
         addr.is_primary_shipping_address = int(is_shipping)
         addr.flags.ignore_permissions = True
-        addr.save()
-        return {"success": True, "address_id": addr.name, "message": _("Address updated")}
-    
-    # Create new
-    addr = frappe.new_doc("Address")
-    addr.address_title = f"{full_name} - {city}"
-    addr.address_type = "Shipping"
-    addr.address_line1 = address_line1
-    addr.address_line2 = address_line2
-    addr.city = city
-    addr.state = state
-    addr.pincode = pincode
-    addr.country = country
-    addr.phone = phone or ""
-    addr.email_id = email
-    addr.is_primary_shipping_address = int(is_shipping)
-    addr.flags.ignore_permissions = True
-    addr.append("links", {
-        "link_doctype": "Customer",
-        "link_name": customer,
-    })
-    addr.insert(ignore_permissions=True)
-    
-    return {"success": True, "address_id": addr.name, "message": _("Address added successfully")}
+        addr.append("links", {
+            "link_doctype": "Customer",
+            "link_name": customer,
+        })
+        addr.insert(ignore_permissions=True)
+
+        return {"success": True, "address_id": addr.name, "message": _("Address added successfully")}
+    except Exception as e:
+        frappe.log_error(f"Save address failed: {e}", "Pharmacy Address")
+        return {"success": False, "message": str(e)}
 
 
 @frappe.whitelist(allow_guest=True)
