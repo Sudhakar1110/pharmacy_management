@@ -148,9 +148,11 @@ function saveAddress() {
             $('#addressForm')[0].reset();
             showToast('Address added!', 'success');
             loadAddresses();
+        } else {
+            showToast(res.message.message || 'Failed to save address. Please try again.', 'danger');
         }
     }).fail(function(xhr) {
-        showToast(xhr.responseJSON?.message || 'Error', 'danger');
+        showToast(xhr.responseJSON?.message || 'Error saving address', 'danger');
     });
 }
 

@@ -358,6 +358,8 @@ function saveNewAddress() {
             showToast('Address added!', 'success');
             // Reload the page to get fresh data server-side
             setTimeout(function() { window.location.reload(); }, 500);
+        } else {
+            showToast(res.message.message || 'Failed to save address. Please try again.', 'danger');
         }
     }).fail(function(xhr) {
         showToast(xhr.responseJSON?.message || 'Error saving address', 'danger');
