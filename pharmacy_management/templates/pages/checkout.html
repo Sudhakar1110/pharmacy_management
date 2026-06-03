@@ -151,7 +151,6 @@
 {% endblock %}
 
 {% block script %}
-<!-- Store checkout data in a JSON script tag to avoid JS syntax errors -->
 <script>
 let selectedAddress = null;
 let selectedPayment = 'COD';
@@ -162,7 +161,7 @@ $(document).ready(function() {
     var urlParams = new URLSearchParams(window.location.search);
     var orderError = urlParams.get('order_error');
     
-    // Always load checkout data via API (bypasses server-side JSON serialization issues)
+    // Load checkout data via API
     loadCheckoutViaAPI(orderError);
 });
 
