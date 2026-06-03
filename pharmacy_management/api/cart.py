@@ -680,7 +680,5 @@ def razorpay_verify(order_id, razorpay_payment_id, razorpay_order_id, razorpay_s
     except Exception as e:
         frappe.log_error(f"Payment Entry creation failed: {e}", "Payment")
 
-    # Create order status record
-    create_order_status_record(so, "Confirmed")
-
+    # Order status record is created automatically by doc_events hook on submit
     return {"success": True, "order_id": order_id, "message": _("Payment successful! Order confirmed.")}
