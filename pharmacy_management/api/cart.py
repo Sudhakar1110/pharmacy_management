@@ -354,6 +354,111 @@ def get_cart_count():
 
 
 @frappe.whitelist(allow_guest=True)
+def place_order(address_name=None, payment_method="COD", prescription_ref=None, notes=None):
+    """Place an order from the cart."""
+    cart = get_cart_data()
+    if not cart.get("items"):
+        frappe.throw(_("Your cart is empty"))
+
+    user = frappe.session.user
+    email = frappe.db.get_value("User", user, "email") or user
+    full_name = frappe.db.get_value("User", user, "full_name") or user
+
+    # Ensure customer exists
+    customer = frappe.db.get_value("Customer", {"email_id": email}, "name")
+    if not customer:
+        customer = frappe.new_doc("Customer")
+        customer.customer_name = full_name
+        customer.customer_type = "Individual"
+        customer.email_id = email
+        customer.flags.ignore_permissions = True
+        customer.insert(ignore_permissions=True)
+
+    # Validate address
+    if not address_name or not frappe.db.exists("Address", address_name):
+        addresses = frappe.get_all("Address",
+            filters={"email_id": email}, fields=["name"], limit=1)
+        if addresses:
+            address_name = addresses[0].name
+        else:
+            frappe.throw(_("Please provide a shipping address"))
+
+    # Validate prescription
+    rx_required = any(item.get("requires_prescription") for item in cart["items"])
+    if rx_required and not prescription_ref:
+        frappe.throw(_("Some medicines require a valid prescription. Please upload one."))
+
+    # Check stock
+    for item in cart["items"]:
+        stock = frappe.db.get_value("Bin", {"item_code": item["medicine"]}, "actual_qty") or 0
+        if stock < item["qty"]:
+            frappe.throw(_("Insufficient stock for {0}. Available: {1}, Requested: {2}").format(
+                item["medicine_name"], int(stock), item["qty"]))
+
+    # Create Sales Order
+    so = frappe.new_doc("Sales Order")
+    so.customer = customer
+    so.transaction_date = frappe.utils.today()
+    so.delivery_date = frappe.utils.add_days(frappe.utils.today(), 3)
+    so.company = frappe.defaults.get_defaults().get("company") or frappe.db.get_single_value("Global Defaults", "default_company")
+    so.shipping_address_name = address_name
+    so.customer_address = address_name
+    if notes:
+        so.notes = notes
+
+    for item in cart["items"]:
+        so.append("items", {
+            "item_code": item["medicine"],
+            "item_name": item["medicine_name"],
+            "qty": item["qty"],
+            "rate": item["rate"],
+            "delivery_date": frappe.utils.add_days(frappe.utils.today(), 3),
+        })
+
+    if cart.get("coupon_code"):
+        so.coupon_code = cart["coupon_code"]
+        if cart["coupon_discount"] > 0:
+            so.discount_amount = cart["coupon_discount"]
+            so.apply_discount_on = "Grand Total"
+
+    so.flags.ignore_permissions = True
+    so.insert(ignore_permissions=True)
+
+    if prescription_ref:
+        try:
+            frappe.db.set_value("Prescription", prescription_ref, {"sales_invoice": so.name, "status": "Dispensing"})
+        except Exception:
+            pass
+
+    so.db_set("custom_order_source", "Website", update_modified=False)
+    so.db_set("custom_payment_method", payment_method, update_modified=False)
+
+    if payment_method == "COD":
+        so.submit()
+        create_order_status_record(so, "Confirmed")
+        clear_cart()
+        return {"success": True, "order_id": so.name, "payment_required": False}
+    else:
+        create_order_status_record(so, "Pending Payment")
+        clear_cart()
+        return {"success": True, "order_id": so.name, "payment_required": True}
+
+
+def create_order_status_record(so, status):
+    """Create an order status tracking record."""
+    try:
+        if frappe.db.exists("DocType", "Order Status"):
+            os = frappe.new_doc("Order Status")
+            os.sales_order = so.name
+            os.status = status
+            os.date = frappe.utils.now()
+            os.flags.ignore_permissions = True
+            os.insert(ignore_permissions=True)
+    except Exception:
+        pass
+
+
+@frappe.whitelist(allow_guest=True)
 def get_checkout_summary():
     """Get checkout summary with cart, user info, and addresses."""
     cart = get_cart()

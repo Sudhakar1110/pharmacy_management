@@ -433,43 +433,60 @@ $('#prescriptionUpload').on('change', function(e) {
     reader.readAsDataURL(file);
 });
 
-// Place order - submit form directly via POST (server-side processing, no API call)
+// Place order via AJAX to cart API (reliable endpoint)
 $('#checkoutForm').on('submit', function(e) {
+    e.preventDefault();
+    
     if (!selectedAddress) {
-        e.preventDefault();
         showToast('Please select a delivery address', 'warning');
         return;
     }
     
-    // Disable button immediately
     const btn = $('#placeOrderBtn');
     btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Placing Order...');
     
-    // Set hidden fields before submitting
-    $('#hiddenAddress').val(selectedAddress);
-    $('#hiddenPayment').val(selectedPayment);
-    $('#hiddenNotes').val($('#orderNotes').val());
+    const orderData = {
+        address_name: selectedAddress,
+        payment_method: selectedPayment,
+        notes: $('#orderNotes').val()
+    };
     
-    // If prescription was uploaded, upload it first then submit
-    if ($('#prescriptionSection').is(':visible') && uploadedPrescription) {
-        e.preventDefault();
-        btn.html('<span class="spinner-border spinner-border-sm"></span> Uploading prescription...');
+    // If prescription was uploaded, upload it first
+    function doPlaceOrder(prescriptionRef) {
+        if (prescriptionRef) {
+            orderData.prescription_ref = prescriptionRef;
+        }
         
+        $.post('/api/method/pharmacy_management.api.cart.place_order', orderData, function(res) {
+            var result = res.message;
+            if (result && result.success) {
+                window.location.href = '/track-order/' + result.order_id;
+            } else {
+                btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order');
+                showToast(result && result.message ? result.message : 'Failed to place order', 'danger');
+            }
+        }).fail(function(xhr) {
+            btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order');
+            var msg = 'Failed to place order';
+            try { msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : msg; } catch(e) {}
+            showToast(msg, 'danger');
+        });
+    }
+    
+    if ($('#prescriptionSection').is(':visible') && uploadedPrescription) {
+        btn.html('<span class="spinner-border spinner-border-sm"></span> Uploading prescription...');
         $.post('/api/method/pharmacy_management.api.prescription.upload_prescription', {
             image: uploadedPrescription,
             notes: $('#orderNotes').val()
         }, function(rxRes) {
-            if (rxRes.message.success) {
-                $('#hiddenPrescriptionRef').val(rxRes.message.prescription_id);
-            }
-            // Now submit the form
-            document.getElementById('checkoutForm').submit();
+            var ref = rxRes.message && rxRes.message.success ? rxRes.message.prescription_id : null;
+            doPlaceOrder(ref);
         }).fail(function() {
-            // Submit anyway even if prescription upload fails
-            document.getElementById('checkoutForm').submit();
+            doPlaceOrder(null);
         });
+    } else {
+        doPlaceOrder(null);
     }
-    // If no prescription needed, the form submits naturally
 });
 
 function initiatePayment(orderResult) {
