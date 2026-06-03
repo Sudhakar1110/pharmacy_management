@@ -16,6 +16,8 @@
                     <input type="hidden" name="prescription_ref" id="hiddenPrescriptionRef">
                     <!-- Delivery Address -->
                     <div class="card border-0 shadow-sm mb-3">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-3"><i class="bi bi-geo-alt"></i> Delivery Address</h5>
                             <div id="addressSection">
                                 <div class="text-center py-3">
                                     <div class="spinner-border text-primary" role="status"></div>
@@ -169,7 +171,8 @@ $(document).ready(function() {
     }
     
     if (!checkoutPageData) {
-        window.location.href = '/cart';
+        // Data not available - show error on page instead of silently redirecting
+        showErrorOnPage('Could not load checkout data. Please try refreshing the page.');
         return;
     }
     
@@ -180,6 +183,7 @@ $(document).ready(function() {
     
     if (!checkoutPageData.cart || checkoutPageData.cart.is_empty) {
         if (!checkoutPageData.order_error) {
+            // Cart is empty - redirect to cart page
             window.location.href = '/cart';
             return;
         }
