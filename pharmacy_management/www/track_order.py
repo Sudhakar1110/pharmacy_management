@@ -20,22 +20,31 @@ def get_context(context):
     context.payment_method = None
     
     if order_id and frappe.db.exists("Sales Order", order_id):
+        # Load the Sales Order directly
         try:
-            from pharmacy_management.api.customer import track_order
-            result = track_order(order_id)
             so = frappe.get_doc("Sales Order", order_id)
             context.order = so
-            context.items = result["items"]
-            context.statuses = result["statuses"]
-            
-            # Determine if payment is needed
-            # Order is in Draft (docstatus=0) → still needs payment
             context.needs_payment = so.docstatus == 0
+            
+            # Get items directly
+            context.items = frappe.get_all(
+                "Sales Order Item",
+                filters={"parent": so.name},
+                fields=["item_code", "item_name", "qty", "rate", "amount"],
+            )
+            
+            # Get Order Status timeline
+            context.statuses = frappe.get_all(
+                "Order Status",
+                filters={"sales_order": so.name},
+                fields=["status", "date", "notes"],
+                order_by="date asc",
+            ) or [{"status": "Pending", "date": so.transaction_date}]
             
             # Get payments
             context.payments = frappe.get_all(
                 "Payment Entry",
-                filters={"reference_doctype": "Sales Order", "reference_name": order_id, "docstatus": 1},
+                filters={"reference_doctype": "Sales Order", "reference_name": so.name, "docstatus": 1},
                 fields=["name", "paid_amount", "mode_of_payment", "posting_date"],
             )
         except Exception:
