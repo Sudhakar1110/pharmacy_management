@@ -189,6 +189,24 @@ $(document).ready(function() {
     }
 });
 
+function deduplicateCartItems(cart) {
+    if (!cart || !cart.items) return cart;
+    var seen = {};
+    var deduped = [];
+    cart.items.forEach(function(item) {
+        var key = item.medicine;
+        if (seen[key]) {
+            seen[key].qty += item.qty;
+            seen[key].amount = seen[key].qty * seen[key].rate;
+        } else {
+            seen[key] = Object.assign({}, item);
+            deduped.push(seen[key]);
+        }
+    });
+    cart.items = deduped;
+    return cart;
+}
+
 function handleCheckoutData(data) {
     if (data.error) {
         showErrorOnPage(data.error);
@@ -205,6 +223,11 @@ function handleCheckoutData(data) {
     // Show order placement error if present
     if (data.order_error) {
         showToast(data.order_error, 'danger');
+    }
+    
+    // Deduplicate cart items on frontend as safety net
+    if (data.cart) {
+        data.cart = deduplicateCartItems(data.cart);
     }
     
     // Render with data

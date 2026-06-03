@@ -16,7 +16,7 @@ def get_cart_key():
 
 
 def get_cart_data():
-    """Retrieve cart from cache, deduplicating items."""
+    """Retrieve cart from cache, deduplicating and fixing items."""
     cart_key = get_cart_key()
     cart = frappe.cache().get_value(cart_key)
     if not cart:
@@ -26,15 +26,24 @@ def get_cart_data():
             "coupon_discount": 0,
         }
     # Deduplicate items by medicine name (merge qty/amount for duplicates)
+    changed = False
     deduped = {}
     for item in cart.get("items", []):
-        med = item["medicine"]
+        med = item.get("medicine")
+        if not med:
+            continue
         if med in deduped:
-            deduped[med]["qty"] += item["qty"]
-            deduped[med]["amount"] = deduped[med]["qty"] * deduped[med]["rate"]
+            deduped[med]["qty"] += item.get("qty", 1)
+            deduped[med]["amount"] = deduped[med]["qty"] * deduped[med].get("rate", 0)
+            changed = True
         else:
             deduped[med] = dict(item)
-    cart["items"] = list(deduped.values())
+    if changed:
+        cart["items"] = list(deduped.values())
+        save_cart_data(cart)
+    elif len(cart.get("items", [])) != len(deduped):
+        cart["items"] = list(deduped.values())
+        save_cart_data(cart)
     return cart
 
 
