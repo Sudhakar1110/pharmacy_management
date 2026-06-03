@@ -152,7 +152,6 @@
 
 {% block script %}
 <!-- Store checkout data in a JSON script tag to avoid JS syntax errors -->
-<script id="checkoutDataStore" type="application/json">{{ checkout_data | safe }}</script>
 <script>
 let selectedAddress = null;
 let selectedPayment = 'COD';
@@ -163,30 +162,8 @@ $(document).ready(function() {
     var urlParams = new URLSearchParams(window.location.search);
     var orderError = urlParams.get('order_error');
     
-    // Try server-side rendered data first, fall back to API call
-    var checkoutPageData = null;
-    try {
-        var dataEl = document.getElementById('checkoutDataStore');
-        if (dataEl && dataEl.textContent.trim()) {
-            checkoutPageData = JSON.parse(dataEl.textContent);
-        }
-    } catch(e) {
-        console.error('Failed to parse checkout data', e);
-    }
-    
-    if (checkoutPageData) {
-        // Server-side data loaded successfully - render it
-        handleCheckoutData(checkoutPageData);
-        // Show order error from URL if present
-        if (orderError) {
-            showToast(decodeURIComponent(orderError), 'danger');
-            history.replaceState({}, document.title, window.location.pathname);
-        }
-    } else {
-        // Fall back to API call (cart.py whitelist works on server)
-        console.log('Server data not available, loading via API...');
-        loadCheckoutViaAPI(orderError);
-    }
+    // Always load checkout data via API (bypasses server-side JSON serialization issues)
+    loadCheckoutViaAPI(orderError);
 });
 
 function deduplicateCartItems(cart) {
