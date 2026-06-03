@@ -253,6 +253,33 @@ function startRazorpayPayment() {
             return;
         }
 
+        // Test mode - no Razorpay keys, submit order directly
+        if (data.test_mode) {
+            $.post('/api/method/pharmacy_management.api.cart.razorpay_verify', {
+                order_id: orderId,
+                razorpay_payment_id: 'test_payment',
+                razorpay_order_id: 'test_order',
+                razorpay_signature: 'test_signature'
+            }, function(verifyRes) {
+                var vdata = verifyRes.message;
+                if (vdata && vdata.success) {
+                    showToast('Payment successful! Order confirmed.', 'success');
+                    setTimeout(function() {
+                        window.location.href = '/track-order?order_id=' + encodeURIComponent(orderId) + '&success=1';
+                    }, 1000);
+                } else {
+                    btn.prop('disabled', false);
+                    $('#paymentProcessingMsg').addClass('d-none');
+                    showToast(vdata && vdata.message ? vdata.message : 'Payment verification failed', 'danger');
+                }
+            }).fail(function() {
+                btn.prop('disabled', false);
+                $('#paymentProcessingMsg').addClass('d-none');
+                showToast('Payment verification failed.', 'danger');
+            });
+            return;
+        }
+
         // Open Razorpay checkout
         const options = {
             key: data.key_id,
