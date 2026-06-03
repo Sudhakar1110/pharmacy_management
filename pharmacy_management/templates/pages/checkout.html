@@ -562,40 +562,55 @@ function showOrderSuccess(opts) {
                 <div class="card-body p-4">
                     <p class="mb-2">Order ID: <strong class="text-primary">${orderId}</strong></p>
                     ${paymentRequired && paymentMethod === 'UPI' ? `
-                    <div class="alert alert-info text-start">
-                        <i class="bi bi-info-circle"></i> Scan the QR code with any UPI app (GPay, PhonePe, Paytm) to pay.
-                    </div>
                     <div class="text-center mb-3">
                         ${upiId ? `
+                        <div class="alert alert-info text-start">
+                            <i class="bi bi-info-circle"></i> Scan the QR code with any UPI app (GPay, PhonePe, Paytm) to pay.
+                        </div>
                         <img src="${generateUpiQrCode(upiId, upiHolder, grandTotal)}" 
                              alt="UPI QR Code" 
                              class="img-fluid rounded border"
                              style="max-width: 220px;"
                              loading="lazy">
                         <p class="text-muted small mt-2"><i class="bi bi-phone"></i> Scan with any UPI app</p>
-                        ` : ''}
-                    </div>
-                    <div class="bg-light rounded p-3 mb-3 text-start">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="text-muted">Amount to Pay:</span>
-                            <span class="fw-bold fs-5 text-success">₹${parseFloat(grandTotal).toFixed(2)}</span>
+                        <div class="bg-light rounded p-3 mb-3 text-start">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">Amount to Pay:</span>
+                                <span class="fw-bold fs-5 text-success">₹${parseFloat(grandTotal).toFixed(2)}</span>
+                            </div>
+                            <hr class="my-2">
+                            <p class="mb-1 small"><strong>Pay to UPI ID:</strong></p>
+                            <p class="mb-0 fs-5 fw-bold text-primary">${upiId}</p>
+                            ${upiHolder ? `<p class="mb-0 text-muted small">Account: ${upiHolder}</p>` : ''}
                         </div>
-                        <hr class="my-2">
-                        <p class="mb-1 small"><strong>Pay to UPI ID:</strong></p>
-                        <p class="mb-0 fs-5 fw-bold text-primary">${upiId || '(Not configured)'}</p>
-                        ${upiHolder ? `<p class="mb-0 text-muted small">Account: ${upiHolder}</p>` : ''}
-                    </div>
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-success btn-lg" onclick="confirmUpiPayment('${orderId}')">
-                            <i class="bi bi-check-circle"></i> I've Paid — Confirm Order
-                        </button>
-                        <button class="btn btn-outline-primary" onclick="window.open('${generateUpiQrCode(upiId, upiHolder, grandTotal)}', '_blank')">
-                            <i class="bi bi-qr-code"></i> Open QR Code Full Size
-                        </button>
-                    </div>
-                    <div id="upiConfirmMsg" class="d-none text-center mt-2">
-                        <div class="spinner-border spinner-border-sm text-success"></div>
-                        <small class="text-muted ms-1">Confirming payment...</small>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success btn-lg" onclick="confirmUpiPayment('${orderId}')">
+                                <i class="bi bi-check-circle"></i> I've Paid — Confirm Order
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="window.open('${generateUpiQrCode(upiId, upiHolder, grandTotal)}', '_blank')">
+                                <i class="bi bi-qr-code"></i> Open QR Code Full Size
+                            </button>
+                        </div>
+                        <div id="upiConfirmMsg" class="d-none text-center mt-2">
+                            <div class="spinner-border spinner-border-sm text-success"></div>
+                            <small class="text-muted ms-1">Confirming payment...</small>
+                        </div>
+                        ` : `
+                        <div class="alert alert-warning text-start">
+                            <i class="bi bi-exclamation-triangle"></i> UPI payment is not yet configured. Please contact the pharmacy to complete your payment.
+                        </div>
+                        <div class="bg-light rounded p-3 mb-3 text-start">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">Amount to Pay:</span>
+                                <span class="fw-bold fs-5 text-success">₹${parseFloat(grandTotal).toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <a href="/my-orders" class="btn btn-primary btn-lg">
+                                <i class="bi bi-box"></i> View My Orders
+                            </a>
+                        </div>
+                        `}
                     </div>
                     ` : paymentRequired ? `
                     <p class="text-warning mb-3"><i class="bi bi-clock"></i> Payment pending</p>

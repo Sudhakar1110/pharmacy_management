@@ -501,15 +501,9 @@ def _place_order(address_name=None, payment_method="COD", prescription_ref=None,
     elif payment_method == "UPI":
         create_order_status_record(so, "Pending Payment")
         clear_cart()
-        # Get UPI details from Pharmacy Settings
-        upi_id = ""
-        upi_holder = ""
-        try:
-            settings = frappe.get_single("Pharmacy Settings")
-            upi_id = getattr(settings, "upi_id", "") or ""
-            upi_holder = getattr(settings, "upi_holder_name", "") or ""
-        except Exception:
-            pass
+        # Get UPI details from Pharmacy Settings (use db.get_single_value to bypass permission checks)
+        upi_id = frappe.db.get_single_value("Pharmacy Settings", "upi_id") or ""
+        upi_holder = frappe.db.get_single_value("Pharmacy Settings", "upi_holder_name") or ""
         return {
             "success": True,
             "order_id": so.name,
@@ -644,14 +638,9 @@ def razorpay_pay(order_id):
         email = frappe.db.get_value("User", user, "email") or ""
         mobile = frappe.db.get_value("User", user, "mobile_no") or ""
 
-        # Get Razorpay credentials (safely — Single doctype record may not exist yet)
-        settings = None
-        try:
-            settings = frappe.get_single("Pharmacy Settings")
-        except Exception:
-            pass
-        key_id = settings.razorpay_key_id if settings else None
-        key_secret = settings.razorpay_key_secret if settings else None
+        # Get Razorpay credentials (use db.get_single_value to bypass permission checks)
+        key_id = frappe.db.get_single_value("Pharmacy Settings", "razorpay_key_id") or None
+        key_secret = frappe.db.get_single_value("Pharmacy Settings", "razorpay_key_secret") or None
 
         if not key_id or not key_secret:
             # Test mode — no real keys configured, submit order directly
@@ -701,13 +690,7 @@ def razorpay_verify(order_id, razorpay_payment_id, razorpay_order_id, razorpay_s
             return {"success": False, "message": _("Order not found")}
 
         # Verify signature
-        try:
-            settings = None
-            try:
-                settings = frappe.get_single("Pharmacy Settings")
-            except Exception:
-                pass
-            key_secret = settings.razorpay_key_secret if settings else None
+        key_secret = frappe.db.get_single_value("Pharmacy Settings", "razorpay_key_secret") or None
 
             if key_secret:
                 import razorpay
