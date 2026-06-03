@@ -569,48 +569,40 @@ def get_checkout_summary():
 @frappe.whitelist(allow_guest=True)
 def razorpay_pay(order_id):
     """Initiate Razorpay payment for a pending order."""
-    if not frappe.db.exists("Sales Order", order_id):
-        return {"success": False, "message": _("Order not found")}
-
-    so = frappe.get_doc("Sales Order", order_id)
-    if so.docstatus == 1:
-        return {"success": False, "message": _("Order already paid")}
-
-    user = frappe.session.user
-    email = frappe.db.get_value("User", user, "email") or ""
-    mobile = frappe.db.get_value("User", user, "mobile_no") or ""
-
-    payment_data = {
-        "amount": so.grand_total,
-        "order_id": so.name,
-        "customer_name": so.customer_name,
-        "customer_email": email,
-        "customer_phone": mobile,
-    }
-
-    # Get Razorpay credentials
-    settings = frappe.get_single("Pharmacy Settings") if frappe.db.exists("DocType", "Pharmacy Settings") else None
-    key_id = settings.razorpay_key_id if settings else None
-    key_secret = settings.razorpay_key_secret if settings else None
-
-    if not key_id or not key_secret:
-        # Return test mode data so checkout JS still works for demo
-        import secrets
-        return {
-            "success": True,
-            "gateway": "razorpay",
-            "key_id": "rzp_test_XXXXXXXXXXXXXXXX",
-            "amount": int(so.grand_total * 100),
-            "currency": "INR",
-            "order_id": so.name,
-            "customer_name": so.customer_name,
-            "customer_email": email,
-            "customer_phone": mobile,
-            "prefill": {"name": so.customer_name, "email": email, "contact": mobile},
-            "theme": {"color": "#2563eb"},
-        }
-
     try:
+        if not frappe.db.exists("Sales Order", order_id):
+            return {"success": False, "message": _("Order not found")}
+
+        so = frappe.get_doc("Sales Order", order_id)
+        if so.docstatus == 1:
+            return {"success": False, "message": _("Order already paid")}
+
+        user = frappe.session.user
+        email = frappe.db.get_value("User", user, "email") or ""
+        mobile = frappe.db.get_value("User", user, "mobile_no") or ""
+
+        # Get Razorpay credentials
+        settings = frappe.get_single("Pharmacy Settings") if frappe.db.exists("DocType", "Pharmacy Settings") else None
+        key_id = settings.razorpay_key_id if settings else None
+        key_secret = settings.razorpay_key_secret if settings else None
+
+        if not key_id or not key_secret:
+            # Return test mode data so checkout JS still works for demo
+            import secrets
+            return {
+                "success": True,
+                "gateway": "razorpay",
+                "key_id": "rzp_test_XXXXXXXXXXXXXXXX",
+                "amount": int(so.grand_total * 100),
+                "currency": "INR",
+                "order_id": so.name,
+                "customer_name": so.customer_name,
+                "customer_email": email,
+                "customer_phone": mobile,
+                "prefill": {"name": so.customer_name, "email": email, "contact": mobile},
+                "theme": {"color": "#2563eb"},
+            }
+
         import razorpay
         client = razorpay.Client(auth=(key_id, key_secret))
         import secrets
@@ -638,66 +630,70 @@ def razorpay_pay(order_id):
         }
     except Exception as e:
         frappe.log_error(f"Razorpay init error: {e}", "Payment")
-        return {"success": False, "message": _("Payment gateway error. Please try again or choose COD.")}
+        return {"success": False, "message": f"Payment error: {str(e)}"}
 
 
 @frappe.whitelist(allow_guest=True)
 def razorpay_verify(order_id, razorpay_payment_id, razorpay_order_id, razorpay_signature):
     """Verify Razorpay payment and submit the Sales Order."""
-    if not frappe.db.exists("Sales Order", order_id):
-        return {"success": False, "message": _("Order not found")}
-
-    # Verify signature
     try:
-        settings = frappe.get_single("Pharmacy Settings") if frappe.db.exists("DocType", "Pharmacy Settings") else None
-        key_secret = settings.razorpay_key_secret if settings else None
+        if not frappe.db.exists("Sales Order", order_id):
+            return {"success": False, "message": _("Order not found")}
 
-        if key_secret:
-            import razorpay
-            params_dict = {
-                "razorpay_order_id": razorpay_order_id,
-                "razorpay_payment_id": razorpay_payment_id,
-                "razorpay_signature": razorpay_signature,
-            }
-            razorpay.Utility.verify_payment_signature(params_dict, key_secret)
+        # Verify signature
+        try:
+            settings = frappe.get_single("Pharmacy Settings") if frappe.db.exists("DocType", "Pharmacy Settings") else None
+            key_secret = settings.razorpay_key_secret if settings else None
+
+            if key_secret:
+                import razorpay
+                params_dict = {
+                    "razorpay_order_id": razorpay_order_id,
+                    "razorpay_payment_id": razorpay_payment_id,
+                    "razorpay_signature": razorpay_signature,
+                }
+                razorpay.Utility.verify_payment_signature(params_dict, key_secret)
+        except Exception as e:
+            frappe.log_error(f"Razorpay signature verify failed: {e}", "Payment")
+            return {"success": False, "message": _("Payment verification failed")}
+
+        # Complete the order
+        so = frappe.get_doc("Sales Order", order_id)
+        if so.docstatus == 1:
+            return {"success": True, "order_id": order_id, "message": _("Order already confirmed")}
+
+        so.flags.ignore_permissions = True
+        try:
+            so.db_set("custom_payment_id", razorpay_payment_id, update_modified=False)
+        except Exception:
+            pass
+        try:
+            so.db_set("custom_payment_method", "Razorpay", update_modified=False)
+        except Exception:
+            pass
+        so.submit()
+
+        # Create Payment Entry
+        try:
+            pe = frappe.new_doc("Payment Entry")
+            pe.payment_type = "Receive"
+            pe.company = so.company
+            pe.posting_date = frappe.utils.today()
+            pe.party_type = "Customer"
+            pe.party = so.customer
+            pe.paid_amount = so.grand_total
+            pe.received_amount = so.grand_total
+            pe.reference_doctype = "Sales Order"
+            pe.reference_name = so.name
+            pe.mode_of_payment = "Razorpay"
+            pe.flags.ignore_permissions = True
+            pe.insert(ignore_permissions=True)
+            pe.submit()
+        except Exception as e:
+            frappe.log_error(f"Payment Entry creation failed: {e}", "Payment")
+
+        # Order status record is created automatically by doc_events hook on submit
+        return {"success": True, "order_id": order_id, "message": _("Payment successful! Order confirmed.")}
     except Exception as e:
-        frappe.log_error(f"Razorpay signature verify failed: {e}", "Payment")
-        return {"success": False, "message": _("Payment verification failed")}
-
-    # Complete the order
-    so = frappe.get_doc("Sales Order", order_id)
-    if so.docstatus == 1:
-        return {"success": True, "order_id": order_id, "message": _("Order already confirmed")}
-
-    so.flags.ignore_permissions = True
-    try:
-        so.db_set("custom_payment_id", razorpay_payment_id, update_modified=False)
-    except Exception:
-        pass
-    try:
-        so.db_set("custom_payment_method", "Razorpay", update_modified=False)
-    except Exception:
-        pass
-    so.submit()
-
-    # Create Payment Entry
-    try:
-        pe = frappe.new_doc("Payment Entry")
-        pe.payment_type = "Receive"
-        pe.company = so.company
-        pe.posting_date = frappe.utils.today()
-        pe.party_type = "Customer"
-        pe.party = so.customer
-        pe.paid_amount = so.grand_total
-        pe.received_amount = so.grand_total
-        pe.reference_doctype = "Sales Order"
-        pe.reference_name = so.name
-        pe.mode_of_payment = "Razorpay"
-        pe.flags.ignore_permissions = True
-        pe.insert(ignore_permissions=True)
-        pe.submit()
-    except Exception as e:
-        frappe.log_error(f"Payment Entry creation failed: {e}", "Payment")
-
-    # Order status record is created automatically by doc_events hook on submit
-    return {"success": True, "order_id": order_id, "message": _("Payment successful! Order confirmed.")}
+        frappe.log_error(f"Razorpay verify error: {e}", "Payment")
+        return {"success": False, "message": f"Payment verification error: {str(e)}"}
