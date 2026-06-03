@@ -483,7 +483,8 @@ $('#checkoutForm').on('submit', function(e) {
         $.post('/api/method/pharmacy_management.api.cart.place_order', orderData, function(res) {
             var result = res.message;
             if (result && result.success) {
-                window.location.href = '/track-order?order_id=' + encodeURIComponent(result.order_id);
+                // Show success on this page instead of redirecting
+                showOrderSuccess(result.order_id, result.payment_required);
             } else {
                 btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order');
                 var errMsg = result && result.message ? result.message : 'Failed to place order';
@@ -522,6 +523,113 @@ $('#checkoutForm').on('submit', function(e) {
         doPlaceOrder(null);
     }
 });
+
+function showOrderSuccess(orderId, paymentRequired) {
+    // Replace the checkout form with a success message
+    var html = `
+        <div class="text-center py-5">
+            <i class="bi bi-check-circle-fill display-1 text-success"></i>
+            <h3 class="mt-3 fw-bold">Order Placed Successfully!</h3>
+            <p class="text-muted">Your order <strong>${orderId}</strong> has been placed.</p>
+            <div class="card border-0 shadow-sm mx-auto mt-4" style="max-width: 400px;">
+                <div class="card-body p-4">
+                    <p class="mb-2">Order ID: <strong class="text-primary">${orderId}</strong></p>
+                    ${paymentRequired ? `
+                    <p class="text-warning mb-3"><i class="bi bi-clock"></i> Payment pending</p>
+                    <button class="btn btn-primary btn-lg w-100" onclick="payNow('${orderId}')">
+                        <i class="bi bi-credit-card"></i> Pay Now
+                    </button>
+                    <div id="paymentProcessingMsg" class="d-none text-center mt-2">
+                        <div class="spinner-border spinner-border-sm text-primary"></div>
+                        <small class="text-muted ms-1">Opening payment window...</small>
+                    </div>
+                    ` : `
+                    <p class="text-success mb-3"><i class="bi bi-truck"></i> You will pay on delivery</p>
+                    `}
+                    <a href="/" class="btn btn-outline-secondary w-100 mt-2">
+                        <i class="bi bi-house"></i> Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Replace the entire checkout content
+    $('.checkout-page .container').html(html);
+}
+
+function payNow(orderId) {
+    var btn = $('button:contains("Pay Now")');
+    btn.prop('disabled', true);
+    $('#paymentProcessingMsg').removeClass('d-none');
+
+    $.get('/api/method/pharmacy_management.api.cart.razorpay_pay', { order_id: orderId }, function(res) {
+        var data = res.message;
+        if (!data || !data.success) {
+            btn.prop('disabled', false);
+            $('#paymentProcessingMsg').addClass('d-none');
+            showToast(data && data.message ? data.message : 'Failed to initiate payment', 'danger');
+            return;
+        }
+
+        var options = {
+            key: data.key_id,
+            amount: data.amount,
+            currency: data.currency || 'INR',
+            name: 'Pharmacy Management',
+            description: 'Order ' + orderId,
+            order_id: data.razorpay_order_id,
+            prefill: data.prefill || {},
+            theme: data.theme || { color: '#2563eb' },
+            handler: function(response) {
+                $.post('/api/method/pharmacy_management.api.cart.razorpay_verify', {
+                    order_id: orderId,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature
+                }, function(verifyRes) {
+                    var vdata = verifyRes.message;
+                    if (vdata && vdata.success) {
+                        showToast('Payment successful! Order confirmed.', 'success');
+                        $('.checkout-page .container').html(`
+                            <div class="text-center py-5">
+                                <i class="bi bi-check-circle-fill display-1 text-success"></i>
+                                <h3 class="mt-3 fw-bold">Payment Successful!</h3>
+                                <p class="text-muted">Order <strong>${orderId}</strong> is confirmed.</p>
+                                <a href="/" class="btn btn-primary mt-3">
+                                    <i class="bi bi-house"></i> Back to Home
+                                </a>
+                            </div>
+                        `);
+                    } else {
+                        btn.prop('disabled', false);
+                        $('#paymentProcessingMsg').addClass('d-none');
+                        showToast(vdata && vdata.message ? vdata.message : 'Payment verification failed', 'danger');
+                    }
+                }).fail(function() {
+                    btn.prop('disabled', false);
+                    $('#paymentProcessingMsg').addClass('d-none');
+                    showToast('Payment verification failed. Please contact support.', 'danger');
+                });
+            },
+            modal: {
+                ondismiss: function() {
+                    btn.prop('disabled', false);
+                    $('#paymentProcessingMsg').addClass('d-none');
+                    showToast('Payment cancelled. You can pay later from your orders page.', 'info');
+                }
+            }
+        };
+        var rzp = new Razorpay(options);
+        rzp.open();
+    }).fail(function(xhr) {
+        btn.prop('disabled', false);
+        $('#paymentProcessingMsg').addClass('d-none');
+        var msg = 'Failed to initiate payment';
+        try { msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : msg; } catch(e) {}
+        showToast(msg, 'danger');
+    });
+}
 
 function initiatePayment(orderResult) {
     const pd = orderResult.payment_data;
