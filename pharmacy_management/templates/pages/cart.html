@@ -165,34 +165,58 @@ function updateCart(medicine, qty) {
         removeItem(medicine);
         return;
     }
-    $.post('/api/method/pharmacy_management.api.cart.update_cart', {
-        medicine: medicine,
-        qty: qty
-    }, function(res) {
-        if (res.message.success) {
-            loadCart();
-            updateCartBadge();
+    frappe.call({
+        method: 'pharmacy_management.api.cart.update_cart',
+        args: {
+            medicine: medicine,
+            qty: qty
+        },
+        callback: function(r) {
+            if (r.message && r.message.success) {
+                loadCart();
+                updateCartBadge();
+            } else {
+                showToast(r.message?.message || 'Error updating cart', 'danger');
+            }
+        },
+        error: function() {
+            showToast('Error updating cart', 'danger');
         }
     });
 }
 
 function removeItem(medicine) {
-    $.post('/api/method/pharmacy_management.api.cart.remove_cart_item', {
-        medicine: medicine
-    }, function(res) {
-        if (res.message.success) {
-            loadCart();
-            updateCartBadge();
+    frappe.call({
+        method: 'pharmacy_management.api.cart.remove_cart_item',
+        args: { medicine: medicine },
+        callback: function(r) {
+            if (r.message && r.message.success) {
+                loadCart();
+                updateCartBadge();
+            } else {
+                showToast(r.message?.message || 'Error removing item', 'danger');
+            }
+        },
+        error: function() {
+            showToast('Error removing item', 'danger');
         }
     });
 }
 
 function clearCart() {
     if (confirm('Clear your entire cart?')) {
-        $.post('/api/method/pharmacy_management.api.cart.clear_cart', function(res) {
-            if (res.message.success) {
-                loadCart();
-                updateCartBadge();
+        frappe.call({
+            method: 'pharmacy_management.api.cart.clear_cart',
+            callback: function(r) {
+                if (r.message && r.message.success) {
+                    loadCart();
+                    updateCartBadge();
+                } else {
+                    showToast(r.message?.message || 'Error clearing cart', 'danger');
+                }
+            },
+            error: function() {
+                showToast('Error clearing cart', 'danger');
             }
         });
     }
@@ -202,17 +226,29 @@ function applyCoupon() {
     const code = $('#couponInput').val().trim();
     if (!code) return;
     
-    $.post('/api/method/pharmacy_management.api.cart.apply_coupon', {
-        coupon_code: code
-    }, function(res) {
-        if (res.message.success) {
-            showToast(res.message.message, 'success');
-            loadCart();
-        } else {
-            showToast(res.message.message, 'warning');
+    frappe.call({
+        method: 'pharmacy_management.api.cart.apply_coupon',
+        args: { coupon_code: code },
+        callback: function(r) {
+            if (r.message && r.message.success) {
+                showToast(r.message.message, 'success');
+                loadCart();
+            } else {
+                showToast(r.message?.message || 'Invalid coupon', 'warning');
+            }
+        },
+        error: function(r) {
+            let errMsg = 'Invalid coupon';
+            if (r && r.responseJSON && r.responseJSON._server_messages) {
+                try {
+                    const msgs = JSON.parse(r.responseJSON._server_messages);
+                    errMsg = JSON.parse(msgs[0]).message || errMsg;
+                } catch(e) {}
+            } else if (r && r.responseJSON && r.responseJSON.message) {
+                errMsg = r.responseJSON.message;
+            }
+            showToast(errMsg, 'warning');
         }
-    }).fail(function(xhr) {
-        showToast(xhr.responseJSON?.message || 'Invalid coupon', 'warning');
     });
 }
 
