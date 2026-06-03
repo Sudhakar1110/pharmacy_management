@@ -1,5 +1,6 @@
 import frappe
 import json
+from frappe.utils.response import json_handler
 
 no_cache = 1
 
@@ -18,6 +19,16 @@ def get_context(context):
     try:
         from pharmacy_management.api.cart import get_cart
         cart_data = get_cart()
+
+        # Convert Decimal/float values to plain floats for safe JSON serialization
+        if cart_data.get("items"):
+            for item in cart_data["items"]:
+                for key in ("rate", "mrp", "amount"):
+                    if key in item and item[key] is not None:
+                        item[key] = float(item[key])
+        for key in ("subtotal", "total_saving", "coupon_discount", "shipping", "grand_total"):
+            if key in cart_data and cart_data[key] is not None:
+                cart_data[key] = float(cart_data[key])
 
         user = frappe.session.user
         email = frappe.db.get_value("User", user, "email") or user
@@ -55,7 +66,7 @@ def get_context(context):
             "user": {"full_name": full_name, "email": email, "mobile": frappe.db.get_value("User", user, "mobile_no") or ""},
             "addresses": addresses,
         }
-        context.checkout_data = json.dumps(checkout_data)
+        context.checkout_data = json.dumps(checkout_data, default=json_handler)
     except Exception as e:
         frappe.log_error(f"Checkout data error: {e}", "Pharmacy Checkout")
         context.checkout_data = json.dumps({"error": str(e)})
