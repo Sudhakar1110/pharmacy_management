@@ -122,11 +122,22 @@
                             <p class="mb-1 text-muted">
                                 {% if payments %}
                                     Paid via {{ payments[0].mode_of_payment }}
+                                {% elif needs_payment %}
+                                    Pending Payment
                                 {% else %}
                                     Payment on Delivery
                                 {% endif %}
                             </p>
                             <p class="mb-0 fw-semibold">Total: ₹{{ order.grand_total }}</p>
+                            {% if needs_payment %}
+                            <button class="btn btn-primary w-100 mt-3" id="payNowBtn" onclick="startRazorpayPayment()">
+                                <i class="bi bi-credit-card"></i> Pay Now ₹{{ order.grand_total }}
+                            </button>
+                            <div id="paymentProcessingMsg" class="d-none text-center mt-2">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                <small class="text-muted ms-1">Opening payment window...</small>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -208,11 +219,84 @@ function guestTrackOrder() {
     window.location.href = `/track-order/${orderId}`;
 }
 
+function startRazorpayPayment() {
+    const btn = $('#payNowBtn');
+    btn.prop('disabled', true);
+    $('#paymentProcessingMsg').removeClass('d-none');
+
+    const orderId = window.location.pathname.split('/').pop();
+
+    $.get(`/api/method/pharmacy_management.api.cart.razorpay_pay`, { order_id: orderId }, function(res) {
+        const data = res.message;
+        if (!data || !data.success) {
+            btn.prop('disabled', false);
+            $('#paymentProcessingMsg').addClass('d-none');
+            showToast(data && data.message ? data.message : 'Failed to initiate payment', 'danger');
+            return;
+        }
+
+        // Open Razorpay checkout
+        const options = {
+            key: data.key_id,
+            amount: data.amount,
+            currency: data.currency || 'INR',
+            name: 'Pharmacy Management',
+            description: 'Order ' + orderId,
+            order_id: data.razorpay_order_id,
+            prefill: data.prefill || {},
+            theme: data.theme || { color: '#2563eb' },
+            handler: function(response) {
+                // Verify payment on server
+                $.post('/api/method/pharmacy_management.api.cart.razorpay_verify', {
+                    order_id: orderId,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature
+                }, function(verifyRes) {
+                    var vdata = verifyRes.message;
+                    if (vdata && vdata.success) {
+                        showToast('Payment successful! Order confirmed.', 'success');
+                        setTimeout(function() {
+                            window.location.href = '/track-order/' + orderId + '?success=1';
+                        }, 1000);
+                    } else {
+                        btn.prop('disabled', false);
+                        $('#paymentProcessingMsg').addClass('d-none');
+                        showToast(vdata && vdata.message ? vdata.message : 'Payment verification failed', 'danger');
+                    }
+                }).fail(function() {
+                    btn.prop('disabled', false);
+                    $('#paymentProcessingMsg').addClass('d-none');
+                    showToast('Payment verification failed. Please contact support.', 'danger');
+                });
+            },
+            modal: {
+                ondismiss: function() {
+                    btn.prop('disabled', false);
+                    $('#paymentProcessingMsg').addClass('d-none');
+                    showToast('Payment cancelled. You can retry from here.', 'info');
+                }
+            }
+        };
+
+        var rzp = new Razorpay(options);
+        rzp.open();
+    }).fail(function(xhr) {
+        btn.prop('disabled', false);
+        $('#paymentProcessingMsg').addClass('d-none');
+        var msg = 'Failed to initiate payment';
+        try { msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : msg; } catch(e) {}
+        showToast(msg, 'danger');
+    });
+}
+
 $(document).ready(function() {
-    // If URL has order_id, auto-track
-    const pathParts = window.location.pathname.split('/');
-    if (pathParts.length >= 3 && pathParts[1] === 'track-order' && pathParts[2]) {
-        // Already loaded server-side
+    // Show success toast if ?success=1 is in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success') === '1') {
+        showToast('Payment successful! Order confirmed.', 'success');
+        // Clean the URL
+        history.replaceState({}, document.title, window.location.pathname);
     }
 });
 
@@ -226,8 +310,8 @@ function showToast(message, type) {
         </div>
     `);
     $('body').append(toast);
-    toast.toast({delay: 3000}).toast('show');
-    setTimeout(() => toast.remove(), 3500);
+    toast.toast({delay: 4000}).toast('show');
+    setTimeout(() => toast.remove(), 4500);
 }
 </script>
 {% endblock %}

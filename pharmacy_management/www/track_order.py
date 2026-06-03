@@ -16,14 +16,25 @@ def get_context(context):
     context.items = []
     context.statuses = []
     context.payments = []
+    context.needs_payment = False
+    context.payment_method = None
     
     if order_id and frappe.db.exists("Sales Order", order_id):
         try:
             from pharmacy_management.api.customer import track_order
             result = track_order(order_id)
-            context.order = frappe.get_doc("Sales Order", order_id)
+            so = frappe.get_doc("Sales Order", order_id)
+            context.order = so
             context.items = result["items"]
             context.statuses = result["statuses"]
+            
+            # Determine if payment is needed
+            # Order is in Draft (docstatus=0) with status 'Pending Payment' → needs payment
+            context.needs_payment = (
+                so.docstatus == 0
+                and result.get("statuses", [])
+                and result["statuses"][0].get("status") == "Pending Payment"
+            )
             
             # Get payments
             context.payments = frappe.get_all(

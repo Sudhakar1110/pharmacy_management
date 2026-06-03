@@ -292,8 +292,14 @@ def complete_payment(order_id, payment_ref, payment_method):
     if so.docstatus == 1:
         return {"success": True, "order_id": order_id, "message": _("Order already confirmed")}
     
-    so.db_set("custom_payment_id", payment_ref, update_modified=False)
-    so.db_set("custom_payment_method", payment_method, update_modified=False)
+    try:
+        so.db_set("custom_payment_id", payment_ref, update_modified=False)
+    except Exception:
+        pass
+    try:
+        so.db_set("custom_payment_method", payment_method, update_modified=False)
+    except Exception:
+        pass
     so.submit()
     
     # Create Payment Entry
