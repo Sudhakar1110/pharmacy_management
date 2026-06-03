@@ -356,6 +356,15 @@ def get_cart_count():
 @frappe.whitelist(allow_guest=True)
 def place_order(address_name=None, payment_method="COD", prescription_ref=None, notes=None):
     """Place an order from the cart."""
+    try:
+        return _place_order(address_name, payment_method, prescription_ref, notes)
+    except Exception as e:
+        frappe.log_error(f"place_order failed: {e}", "Pharmacy Order")
+        return {"success": False, "message": str(e)}
+
+
+def _place_order(address_name=None, payment_method="COD", prescription_ref=None, notes=None):
+    """Internal order placement - wrapped by place_order for consistent error handling."""
     cart = get_cart_data()
     if not cart.get("items"):
         frappe.throw(_("Your cart is empty"))
