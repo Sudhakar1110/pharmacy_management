@@ -1,5 +1,6 @@
 import frappe
 import json
+from urllib.parse import quote
 
 no_cache = 1
 
@@ -93,62 +94,16 @@ def place_order(context):
 
         if result.get("success"):
             order_id = result.get("order_id")
-            # For both COD and online payments, go to order tracking page
-            # COD is submitted immediately, online payments show a prompt to pay
             frappe.local.flags.redirect_location = f"/track-order/{order_id}"
             raise frappe.Redirect
         else:
-            context.error = result.get("message", "Failed to place order")
+            error_msg = result.get("message", "Failed to place order")
+            frappe.local.flags.redirect_location = f"/checkout?order_error={quote(error_msg)}"
+            raise frappe.Redirect
     except frappe.Redirect:
         raise
     except Exception as e:
-        context.error = str(e)
+        error_msg = str(e)
         frappe.log_error(f"Order placement error: {e}", "Pharmacy Checkout")
-
-    # On error, re-render the checkout page with fresh data + error message
-    context.no_sidebar = True
-    context.no_breadcrumbs = True
-    context.title = "Checkout"
-    context.page = "checkout"
-    try:
-        from pharmacy_management.api.cart import get_cart
-        cart_data = get_cart()
-        user = frappe.session.user
-        email = frappe.db.get_value("User", user, "email") or user
-        full_name = frappe.db.get_value("User", user, "full_name") or user
-        customer = frappe.db.get_value("Customer", {"email_id": email}, "name")
-        addresses = []
-        if customer:
-            try:
-                address_links = frappe.get_all("Dynamic Link",
-                    filters={"link_doctype": "Customer", "link_name": customer, "parenttype": "Address"},
-                    fields=["parent"])
-                for link in address_links:
-                    try:
-                        addr = frappe.get_doc("Address", link.parent)
-                        addresses.append({
-                            "name": addr.name,
-                            "address_line1": addr.address_line1,
-                            "address_line2": addr.address_line2,
-                            "city": addr.city,
-                            "state": addr.state,
-                            "pincode": addr.pincode,
-                            "phone": addr.phone,
-                            "email_id": addr.email_id,
-                            "is_shipping": getattr(addr, "is_primary_shipping_address", 0),
-                            "is_billing": getattr(addr, "is_primary_billing_address", 0),
-                        })
-                    except Exception:
-                        continue
-            except Exception:
-                pass
-        checkout_data = {
-            "cart": cart_data,
-            "user": {"full_name": full_name, "email": email, "mobile": frappe.db.get_value("User", user, "mobile_no") or ""},
-            "addresses": addresses,
-            "order_error": context.error,
-        }
-        context.checkout_data = json.dumps(checkout_data)
-    except Exception:
-        context.checkout_data = json.dumps({"error": context.error})
-    return context
+        frappe.local.flags.redirect_location = f"/checkout?order_error={quote(error_msg)}"
+        raise frappe.Redirect

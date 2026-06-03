@@ -159,6 +159,10 @@ let selectedPayment = 'COD';
 let uploadedPrescription = null;
 
 $(document).ready(function() {
+    // Check for order error from URL parameter (set by server on failed order)
+    var urlParams = new URLSearchParams(window.location.search);
+    var orderError = urlParams.get('order_error');
+    
     // Try server-side rendered data first, fall back to API call
     var checkoutPageData = null;
     try {
@@ -173,10 +177,14 @@ $(document).ready(function() {
     if (checkoutPageData) {
         // Server-side data loaded successfully - render it
         handleCheckoutData(checkoutPageData);
+        // Show order error from URL if present
+        if (orderError) {
+            showToast(decodeURIComponent(orderError), 'danger');
+        }
     } else {
         // Fall back to API call (cart.py whitelist works on server)
         console.log('Server data not available, loading via API...');
-        loadCheckoutViaAPI();
+        loadCheckoutViaAPI(orderError);
     }
 });
 
@@ -208,11 +216,15 @@ function handleCheckoutData(data) {
     }
 }
 
-function loadCheckoutViaAPI() {
+function loadCheckoutViaAPI(orderError) {
     $.get('/api/method/pharmacy_management.api.cart.get_checkout_summary', function(res) {
         var data = res.message;
         if (data && data.cart) {
             handleCheckoutData(data);
+            // Show order error from URL if present
+            if (orderError) {
+                showToast(decodeURIComponent(orderError), 'danger');
+            }
         } else {
             showErrorOnPage('Could not load checkout data. Please try refreshing the page.');
         }
