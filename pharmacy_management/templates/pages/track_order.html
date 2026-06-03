@@ -210,13 +210,25 @@
 
 {% block script %}
 <script>
+function getOrderIdFromUrl() {
+    // Try query parameter first, then fall back to path
+    var params = new URLSearchParams(window.location.search);
+    var oid = params.get('order_id');
+    if (oid) return oid;
+    var parts = window.location.pathname.split('/').filter(function(p) { return p; });
+    if (parts.length >= 2 && parts[parts.length - 2] === 'track-order') {
+        return parts[parts.length - 1];
+    }
+    return null;
+}
+
 function guestTrackOrder() {
     const orderId = $('#guestOrderId').val().trim();
     if (!orderId) {
         showToast('Please enter an order ID', 'warning');
         return;
     }
-    window.location.href = `/track-order/${orderId}`;
+    window.location.href = '/track-order?order_id=' + encodeURIComponent(orderId);
 }
 
 function startRazorpayPayment() {
@@ -224,7 +236,13 @@ function startRazorpayPayment() {
     btn.prop('disabled', true);
     $('#paymentProcessingMsg').removeClass('d-none');
 
-    const orderId = window.location.pathname.split('/').pop();
+    const orderId = getOrderIdFromUrl();
+    if (!orderId) {
+        btn.prop('disabled', false);
+        $('#paymentProcessingMsg').addClass('d-none');
+        showToast('Order ID not found', 'danger');
+        return;
+    }
 
     $.get(`/api/method/pharmacy_management.api.cart.razorpay_pay`, { order_id: orderId }, function(res) {
         const data = res.message;
@@ -257,7 +275,7 @@ function startRazorpayPayment() {
                     if (vdata && vdata.success) {
                         showToast('Payment successful! Order confirmed.', 'success');
                         setTimeout(function() {
-                            window.location.href = '/track-order/' + orderId + '?success=1';
+                            window.location.href = '/track-order?order_id=' + encodeURIComponent(orderId) + '&success=1';
                         }, 1000);
                     } else {
                         btn.prop('disabled', false);

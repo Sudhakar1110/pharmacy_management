@@ -483,7 +483,7 @@ $('#checkoutForm').on('submit', function(e) {
         $.post('/api/method/pharmacy_management.api.cart.place_order', orderData, function(res) {
             var result = res.message;
             if (result && result.success) {
-                window.location.href = '/track-order/' + result.order_id;
+                window.location.href = '/track-order?order_id=' + encodeURIComponent(result.order_id);
             } else {
                 btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order');
                 var errMsg = result && result.message ? result.message : 'Failed to place order';
@@ -543,7 +543,7 @@ function initiatePayment(orderResult) {
                     razorpay_order_id: response.razorpay_order_id,
                     payment_method: 'Razorpay'
                 }, function() {
-                    window.location.href = `/track-order/${pd.order_id}?success=1`;
+                    window.location.href = '/track-order?order_id=' + encodeURIComponent(pd.order_id) + '&success=1';
                 });
             },
             modal: {
@@ -565,7 +565,7 @@ function initiatePayment(orderResult) {
         `);
     } else {
         // COD / UPI - fallback
-        window.location.href = `/track-order/${pd.order_id}?success=1`;
+        window.location.href = '/track-order?order_id=' + encodeURIComponent(pd.order_id) + '&success=1';
     }
 }
 
