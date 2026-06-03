@@ -1,3 +1,5 @@
+import traceback
+
 import frappe
 from frappe import _
 
@@ -206,6 +208,16 @@ def get_addresses():
     return {"addresses": addresses}
 
 
+def _set_addr_field(addr, fieldname, value):
+    """Safely set a field on an Address doc if the field exists."""
+    try:
+        meta = frappe.get_meta("Address")
+        if meta.has_field(fieldname):
+            addr.set(fieldname, value)
+    except Exception:
+        pass  # Field doesn't exist, skip silently
+
+
 @frappe.whitelist(allow_guest=True)
 def save_address(address_line1, city, state, pincode, country="India", address_line2=None, phone=None, is_shipping=0, address_name=None):
     """Create or update a customer address."""
@@ -228,7 +240,7 @@ def save_address(address_line1, city, state, pincode, country="India", address_l
             addr.pincode = pincode
             addr.country = country
             addr.phone = phone or addr.phone
-            addr.is_primary_shipping_address = int(is_shipping)
+            _set_addr_field(addr, "is_primary_shipping_address", int(is_shipping))
             addr.flags.ignore_permissions = True
             addr.save()
             return {"success": True, "address_id": addr.name, "message": _("Address updated")}
@@ -244,8 +256,9 @@ def save_address(address_line1, city, state, pincode, country="India", address_l
         addr.pincode = pincode
         addr.country = country
         addr.phone = phone or ""
-        addr.email_id = email
-        addr.is_primary_shipping_address = int(is_shipping)
+        _set_addr_field(addr, "email_id", email)
+        _set_addr_field(addr, "is_primary_shipping_address", int(is_shipping))
+        _set_addr_field(addr, "is_shipping_address", int(is_shipping))
         addr.flags.ignore_permissions = True
         addr.append("links", {
             "link_doctype": "Customer",
@@ -255,7 +268,7 @@ def save_address(address_line1, city, state, pincode, country="India", address_l
 
         return {"success": True, "address_id": addr.name, "message": _("Address added successfully")}
     except Exception as e:
-        frappe.log_error(f"Save address failed: {e}", "Pharmacy Address")
+        frappe.log_error(f"Save address failed: {e}\n{traceback.format_exc()}", "Pharmacy Address")
         return {"success": False, "message": str(e)}
 
 
