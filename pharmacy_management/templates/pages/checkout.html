@@ -147,15 +147,24 @@
 {% endblock %}
 
 {% block script %}
+<!-- Store checkout data in a JSON script tag to avoid JS syntax errors -->
+<script id="checkoutDataStore" type="application/json">{{ checkout_data | safe }}</script>
 <script>
 let selectedAddress = null;
 let selectedPayment = 'COD';
 let uploadedPrescription = null;
 
 $(document).ready(function() {
-    // Use server-side rendered data (avoids API whitelist issue)
-    // Embed JSON directly as a JS object literal (no JSON.parse needed)
-    var checkoutPageData = {{ checkout_data | safe }};
+    // Read server-side rendered data from JSON script tag
+    var checkoutPageData = null;
+    try {
+        var dataEl = document.getElementById('checkoutDataStore');
+        if (dataEl) {
+            checkoutPageData = JSON.parse(dataEl.textContent);
+        }
+    } catch(e) {
+        console.error('Failed to parse checkout data', e);
+    }
     
     if (!checkoutPageData) {
         window.location.href = '/cart';
