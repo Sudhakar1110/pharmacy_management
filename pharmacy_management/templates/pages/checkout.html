@@ -160,8 +160,14 @@ function loadCheckoutData() {
     $.get('/api/method/pharmacy_management.api.checkout.get_checkout_summary', function(res) {
         const data = res.message;
         
+        if (!data || !data.cart) {
+            showToast('Failed to load checkout data. Redirecting...', 'danger');
+            setTimeout(function() { window.location.href = '/cart'; }, 2000);
+            return;
+        }
+        
         // Load addresses
-        renderAddresses(data.addresses);
+        renderAddresses(data.addresses || []);
         renderPaymentOptions();
         renderCheckoutSummary(data.cart);
         
@@ -170,9 +176,12 @@ function loadCheckoutData() {
             $('#prescriptionSection').show();
         }
     }).fail(function(xhr) {
-        if (xhr.status === 400 || xhr.status === 500) {
-            window.location.href = '/cart';
-        }
+        var msg = 'Error loading checkout. Please try again.';
+        try {
+            msg = xhr.responseJSON?.message || xhr.responseText || msg;
+        } catch(e) {}
+        showToast(msg, 'danger');
+        setTimeout(function() { window.location.href = '/cart'; }, 2000);
     });
 }
 

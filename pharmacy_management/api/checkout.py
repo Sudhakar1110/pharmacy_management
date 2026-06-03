@@ -266,27 +266,33 @@ def get_checkout_summary():
     email = frappe.db.get_value("User", user, "email") or user
     full_name = frappe.db.get_value("User", user, "full_name") or user
     
-    # Get user addresses
+    # Get user addresses safely
     customer = frappe.db.get_value("Customer", {"email_id": email}, "name")
     addresses = []
     if customer:
-        address_links = frappe.get_all("Dynamic Link", 
-            filters={"link_doctype": "Customer", "link_name": customer, "parenttype": "Address"},
-            fields=["parent"])
-        for link in address_links:
-            addr = frappe.get_doc("Address", link.parent)
-            addresses.append({
-                "name": addr.name,
-                "address_line1": addr.address_line1,
-                "address_line2": addr.address_line2,
-                "city": addr.city,
-                "state": addr.state,
-                "pincode": addr.pincode,
-                "phone": addr.phone,
-                "email_id": addr.email_id,
-                "is_shipping": addr.is_primary_shipping_address,
-                "is_billing": addr.is_primary_billing_address,
-            })
+        try:
+            address_links = frappe.get_all("Dynamic Link", 
+                filters={"link_doctype": "Customer", "link_name": customer, "parenttype": "Address"},
+                fields=["parent"])
+            for link in address_links:
+                try:
+                    addr = frappe.get_doc("Address", link.parent)
+                    addresses.append({
+                        "name": addr.name,
+                        "address_line1": addr.address_line1,
+                        "address_line2": addr.address_line2,
+                        "city": addr.city,
+                        "state": addr.state,
+                        "pincode": addr.pincode,
+                        "phone": addr.phone,
+                        "email_id": addr.email_id,
+                        "is_shipping": getattr(addr, "is_primary_shipping_address", 0),
+                        "is_billing": getattr(addr, "is_primary_billing_address", 0),
+                    })
+                except Exception:
+                    continue  # Skip any problematic addresses
+        except Exception:
+            pass  # No addresses available
     
     return {
         "cart": cart_data,
