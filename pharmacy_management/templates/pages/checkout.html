@@ -153,56 +153,51 @@ let selectedPayment = 'COD';
 let uploadedPrescription = null;
 
 $(document).ready(function() {
-    loadCheckoutData();
-});
-
-function loadCheckoutData() {
-    $.get('/api/method/pharmacy_management.api.checkout.get_checkout_summary', function(res) {
-        const data = res.message;
-        
-        if (!data || !data.cart) {
-            showToast('Failed to load checkout data. Redirecting...', 'danger');
-            setTimeout(function() { window.location.href = '/cart'; }, 2000);
-            return;
-        }
-        
-        // Load addresses
-        renderAddresses(data.addresses || []);
-        renderPaymentOptions();
-        renderCheckoutSummary(data.cart);
-        
-        // Check if prescription needed
-        if (data.cart.requires_prescription) {
-            $('#prescriptionSection').show();
-        }
-    }).fail(function(xhr) {
-        var msg = 'Error loading checkout. Please try again.';
-        try {
-            msg = xhr.responseJSON?.message || xhr.responseText || msg;
-        } catch(e) {}
-        
-        // If cart is empty, redirect to cart page
-        if (msg.toLowerCase().indexOf('empty') >= 0) {
+    // Use server-side rendered data (avoids API whitelist issue)
+    var initialData = null;
+    try {
+        initialData = JSON.parse('{{ checkout_data | safe }}');
+    } catch(e) {}
+    
+    if (initialData && initialData.cart) {
+        // Check if cart is empty
+        if (initialData.cart.is_empty) {
             window.location.href = '/cart';
             return;
         }
         
-        // For real errors, show on page with a retry option
-        $('#addressSection, #paymentOptions, #checkoutSummary').html(`
-            <div class="text-center py-4">
-                <i class="bi bi-exclamation-triangle display-4 text-warning"></i>
-                <h5 class="mt-3">Something went wrong</h5>
-                <p class="text-muted">${escapeHtml(msg)}</p>
-                <button class="btn btn-primary mt-2" onclick="loadCheckoutData()">
-                    <i class="bi bi-arrow-clockwise"></i> Retry
-                </button>
-                <a href="/cart" class="btn btn-outline-secondary mt-2 ms-2">
-                    <i class="bi bi-cart"></i> Go to Cart
-                </a>
-            </div>
-        `);
-        $('#placeOrderBtn').prop('disabled', true);
-    });
+        // Render with server-side data
+        renderAddresses(initialData.addresses || []);
+        renderPaymentOptions();
+        renderCheckoutSummary(initialData.cart);
+        
+        if (initialData.cart.requires_prescription) {
+            $('#prescriptionSection').show();
+        }
+    } else if (initialData && initialData.error) {
+        // Server-side error - show on page
+        showErrorOnPage(initialData.error);
+    } else {
+        // No data - reload page or redirect to cart
+        window.location.href = '/cart';
+    }
+});
+
+function showErrorOnPage(msg) {
+    $('#addressSection, #paymentOptions, #checkoutSummary').html(`
+        <div class="text-center py-4">
+            <i class="bi bi-exclamation-triangle display-4 text-warning"></i>
+            <h5 class="mt-3">Something went wrong</h5>
+            <p class="text-muted">${escapeHtml(msg)}</p>
+            <a href="/checkout" class="btn btn-primary mt-2">
+                <i class="bi bi-arrow-clockwise"></i> Retry
+            </a>
+            <a href="/cart" class="btn btn-outline-secondary mt-2 ms-2">
+                <i class="bi bi-cart"></i> Go to Cart
+            </a>
+        </div>
+    `);
+    $('#placeOrderBtn').prop('disabled', true);
 }
 
 function escapeHtml(str) {
@@ -283,7 +278,8 @@ function saveNewAddress() {
             $('#addAddressModal').modal('hide');
             $('#addressForm')[0].reset();
             showToast('Address added!', 'success');
-            loadCheckoutData();
+            // Reload the page to get fresh data server-side
+            setTimeout(function() { window.location.reload(); }, 500);
         }
     }).fail(function(xhr) {
         showToast(xhr.responseJSON?.message || 'Error saving address', 'danger');
