@@ -388,19 +388,45 @@ def place_order(address_name=None, payment_method="COD", prescription_ref=None, 
     if rx_required and not prescription_ref:
         frappe.throw(_("Some medicines require a valid prescription. Please upload one."))
 
-    # Check stock
+    # Check stock using the same unified stock check as add_to_cart/get_cart
     for item in cart["items"]:
-        stock = frappe.db.get_value("Bin", {"item_code": item["medicine"]}, "actual_qty") or 0
+        stock = get_medicine_stock(item["medicine"])
         if stock < item["qty"]:
             frappe.throw(_("Insufficient stock for {0}. Available: {1}, Requested: {2}").format(
                 item["medicine_name"], int(stock), item["qty"]))
+
+    # Ensure Item records exist for Sales Order compatibility
+    try:
+        for cart_item in cart["items"]:
+            if not frappe.db.exists("Item", cart_item["medicine"]):
+                med = frappe.db.get_value("Medicine Master", cart_item["medicine"],
+                    ["medicine_name", "dosage_form", "strength"], as_dict=True)
+                item_doc = frappe.new_doc("Item")
+                item_doc.item_code = cart_item["medicine"]
+                item_doc.item_name = med.medicine_name if med else cart_item["medicine_name"]
+                item_doc.item_group = "Products"
+                item_doc.stock_uom = "Nos"
+                item_doc.is_stock_item = 0
+                item_doc.flags.ignore_permissions = True
+                item_doc.insert(ignore_permissions=True)
+    except Exception as e:
+        frappe.log_error(f"Failed to create Item for order: {e}", "Pharmacy Order")
+
+    # Determine company
+    company = (frappe.defaults.get_defaults().get("company")
+        or frappe.db.get_single_value("Global Defaults", "default_company"))
+    if not company:
+        companies = frappe.get_all("Company", limit=1, pluck="name")
+        company = companies[0] if companies else None
+    if not company:
+        frappe.throw(_("No Company found. Please set a default company in Global Defaults or create a Company."))
 
     # Create Sales Order
     so = frappe.new_doc("Sales Order")
     so.customer = customer
     so.transaction_date = frappe.utils.today()
     so.delivery_date = frappe.utils.add_days(frappe.utils.today(), 3)
-    so.company = frappe.defaults.get_defaults().get("company") or frappe.db.get_single_value("Global Defaults", "default_company")
+    so.company = company
     so.shipping_address_name = address_name
     so.customer_address = address_name
     if notes:

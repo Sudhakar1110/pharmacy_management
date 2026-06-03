@@ -463,12 +463,23 @@ $('#checkoutForm').on('submit', function(e) {
                 window.location.href = '/track-order/' + result.order_id;
             } else {
                 btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order');
-                showToast(result && result.message ? result.message : 'Failed to place order', 'danger');
+                var errMsg = result && result.message ? result.message : 'Failed to place order';
+                showToast(errMsg, 'danger');
             }
         }).fail(function(xhr) {
             btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order');
             var msg = 'Failed to place order';
-            try { msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : msg; } catch(e) {}
+            try {
+                // Frappe v15 returns error in responseJSON.message for frappe.throw()
+                if (xhr.responseJSON) {
+                    msg = xhr.responseJSON.message || xhr.responseJSON._error_message || msg;
+                } else if (xhr.responseText) {
+                    msg = xhr.responseText;
+                }
+            } catch(e) {
+                console.error('Error parsing response:', e, xhr);
+            }
+            console.error('Place order failed:', msg);
             showToast(msg, 'danger');
         });
     }
