@@ -29,12 +29,8 @@ def get_context(context):
             context.statuses = result["statuses"]
             
             # Determine if payment is needed
-            # Order is in Draft (docstatus=0) with status 'Pending Payment' → needs payment
-            context.needs_payment = (
-                so.docstatus == 0
-                and result.get("statuses", [])
-                and result["statuses"][0].get("status") == "Pending Payment"
-            )
+            # Order is in Draft (docstatus=0) → still needs payment
+            context.needs_payment = so.docstatus == 0
             
             # Get payments
             context.payments = frappe.get_all(
