@@ -24,6 +24,9 @@ def get_context(context):
     context.no_sidebar = True
     context.no_breadcrumbs = True
     context.title = "Checkout"
+    
+    # Pass the CSRF token to the template
+    context.csrf_token = frappe.session.csrf_token
 
     try:
         from pharmacy_management.api.cart import get_cart

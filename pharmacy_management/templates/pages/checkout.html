@@ -177,6 +177,11 @@ var selectedPayment = 'COD';
 var cartGrandTotal = 0;
 var orderId = null;
 
+// CSRF token from server
+var csrfToken = "{{ csrf_token or '' }}";
+if (typeof frappe === 'undefined') { window.frappe = {}; }
+frappe.csrf_token = csrfToken;
+
 $(document).ready(function() {
     loadCheckoutData();
 });
@@ -336,13 +341,6 @@ function updateTotalDisplay(cart) {
 $('#checkoutForm').on('submit', function(e) {
     e.preventDefault();
 
-    // Check if user is logged in
-    if (!isUserLoggedIn()) {
-        showToast('Please login to place an order', 'warning');
-        window.location.href = '/login?redirect-to=/checkout';
-        return;
-    }
-
     // Validate address
     var addr = getAddressData();
     if (!addr) return;
@@ -359,15 +357,6 @@ $('#checkoutForm').on('submit', function(e) {
     // Step 1: Save the address via API
     saveAddressAndPlaceOrder(addr, btn);
 });
-
-function isUserLoggedIn() {
-    // Check if session user is not guest
-    try {
-        return frappe.session.user && frappe.session.user !== 'Guest';
-    } catch(e) {
-        return true; // If frappe not available, assume logged in
-    }
-}
 
 function getAddressData() {
     var addr = {
@@ -391,12 +380,35 @@ function getAddressData() {
     return addr;
 }
 
+function getCsrfToken() {
+    // Try multiple sources for CSRF token
+    try {
+        if (typeof frappe !== 'undefined' && frappe.csrf_token) {
+            return frappe.csrf_token;
+        }
+    } catch(e) {}
+    
+    // Try meta tag
+    var metaToken = document.querySelector('meta[name="csrf-token"]');
+    if (metaToken) {
+        return metaToken.getAttribute('content');
+    }
+    
+    // Try data attribute on form
+    var formToken = document.querySelector('[data-csrf-token]');
+    if (formToken) {
+        return formToken.getAttribute('data-csrf-token');
+    }
+    
+    return '';
+}
+
 function saveAddressAndPlaceOrder(addr, btn) {
     $.ajax({
         url: '/api/method/pharmacy_management.api.customer.save_address',
         type: 'POST',
         data: addr,
-        headers: { 'X-Frappe-CSRF-Token': frappe.csrf_token },
+        headers: { 'X-Frappe-CSRF-Token': getCsrfToken() },
         success: function(res) {
             if (res.message && res.message.success) {
                 // Address saved, now place the order
@@ -419,6 +431,7 @@ function saveAddressAndPlaceOrder(addr, btn) {
                 }
             } catch(e) {}
             showToast(msg, 'danger');
+            console.error('Save address error:', xhr);
         }
     });
 }
@@ -434,7 +447,7 @@ function placeOrder(addressName, btn) {
             payment_method: selectedPayment,
             notes: notes
         },
-        headers: { 'X-Frappe-CSRF-Token': frappe.csrf_token },
+        headers: { 'X-Frappe-CSRF-Token': getCsrfToken() },
         success: function(res) {
             var result = res.message;
             if (result && result.success) {
@@ -535,7 +548,7 @@ function confirmUpiPayment(oid) {
         url: '/api/method/pharmacy_management.api.cart.confirm_upi_payment',
         type: 'POST',
         data: { order_id: oid },
-        headers: { 'X-Frappe-CSRF-Token': frappe.csrf_token },
+        headers: { 'X-Frappe-CSRF-Token': getCsrfToken() },
         success: function(res) {
             var data = res.message;
             if (data && data.success) {
@@ -583,7 +596,7 @@ function initiateCardPayment(oid, btn) {
                         razorpay_order_id: 'test_order',
                         razorpay_signature: 'test_signature'
                     },
-                    headers: { 'X-Frappe-CSRF-Token': frappe.csrf_token },
+                    headers: { 'X-Frappe-CSRF-Token': getCsrfToken() },
                     success: function(verifyRes) {
                         var vdata = verifyRes.message;
                         if (vdata && vdata.success) {
@@ -621,7 +634,7 @@ function initiateCardPayment(oid, btn) {
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_signature: response.razorpay_signature
                         },
-                        headers: { 'X-Frappe-CSRF-Token': frappe.csrf_token },
+                        headers: { 'X-Frappe-CSRF-Token': getCsrfToken() },
                         success: function(verifyRes) {
                             var vdata = verifyRes.message;
                             if (vdata && vdata.success) {
