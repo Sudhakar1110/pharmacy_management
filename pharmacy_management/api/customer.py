@@ -27,7 +27,7 @@ def get_customer_orders(page=1, limit=10):
                 "status", "docstatus", "total_qty", "total"],
         order_by="transaction_date desc",
         limit=limit,
-        offset=offset,
+        start=offset,
     )
     
     for order in orders:
