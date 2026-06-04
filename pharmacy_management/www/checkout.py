@@ -1,13 +1,18 @@
-import frappe
 import json
 from decimal import Decimal
 from datetime import date, datetime
 
+import frappe
+
 no_cache = 1
 
 
+# ---------------------------------------------------------------------------
+# JSON serialisation helper
+# ---------------------------------------------------------------------------
+
 def _make_json_safe(obj):
-    """Recursively convert non-JSON-safe types to plain JSON-compatible types."""
+    """Recursively convert non-JSON-serialisable types to plain Python equivalents."""
     if isinstance(obj, (date, datetime)):
         return obj.isoformat()
     if isinstance(obj, Decimal):
@@ -19,43 +24,52 @@ def _make_json_safe(obj):
     return obj
 
 
+# ---------------------------------------------------------------------------
+# Page context
+# ---------------------------------------------------------------------------
+
 def get_context(context):
-    """Render the checkout page with cart data and payment config (no hardcoded addresses)."""
+    """Render the checkout page with cart data and payment config."""
     context.no_sidebar = True
     context.no_breadcrumbs = True
     context.title = "Checkout"
-    
-    # Pass the CSRF token to the template
     context.csrf_token = frappe.session.csrf_token
 
     try:
         from pharmacy_management.api.cart import get_cart
+
+        # --- single DB round-trips -------------------------------------------
+
+        # 1. All Pharmacy Settings fields in one call
+        settings = frappe.db.get_singles_dict("Pharmacy Settings")
+
+        # 2. All User fields in one call
+        user = frappe.db.get_value(
+            "User",
+            frappe.session.user,
+            ["full_name", "email", "mobile_no"],
+            as_dict=True,
+        ) or {}
+
+        # ---------------------------------------------------------------------
+
         cart_data = get_cart()
 
-        # Payment config from Pharmacy Settings
-        upi_id = frappe.db.get_single_value("Pharmacy Settings", "upi_id") or ""
-        upi_holder = frappe.db.get_single_value("Pharmacy Settings", "upi_holder_name") or ""
-        razorpay_key = frappe.db.get_single_value("Pharmacy Settings", "razorpay_key_id") or ""
-
-        user_info = {
-            "full_name": frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user,
-            "email": frappe.db.get_value("User", frappe.session.user, "email") or frappe.session.user,
-            "mobile": frappe.db.get_value("User", frappe.session.user, "mobile_no") or "",
-        }
-
-        checkout_data = {
+        context.checkout_data = json.dumps({
             "cart": _make_json_safe(cart_data),
-            "user": user_info,
+            "user": {
+                "full_name": user.get("full_name") or frappe.session.user,
+                "email":     user.get("email")     or frappe.session.user,
+                "mobile":    user.get("mobile_no") or "",
+            },
             "payment_config": {
-                "upi_id": upi_id,
-                "upi_holder_name": upi_holder,
-                "razorpay_key_id": razorpay_key,
-            }
-        }
-        context.checkout_data = json.dumps(checkout_data)
+                "upi_id":         settings.get("upi_id", ""),
+                "upi_holder_name": settings.get("upi_holder_name", ""),
+                "razorpay_key_id": settings.get("razorpay_key_id", ""),
+            },
+        })
 
-    except Exception as e:
-        frappe.log_error(f"Checkout page error: {e}", "Pharmacy Checkout")
-        context.checkout_data = json.dumps({"error": str(e)})
-
-    return context
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Pharmacy Checkout: get_context failed")
+        # Never leak internal error strings to the browser
+        context.checkout_data = json.dumps({"error": "Unable to load checkout data. Please try again."})
