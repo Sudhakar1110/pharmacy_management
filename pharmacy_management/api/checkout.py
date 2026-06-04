@@ -258,52 +258,146 @@ def verify_payment(order_id, payment_id, razorpay_order_id=None, payment_method=
 
 
 @frappe.whitelist()
-def get_checkout_summary():
-    """Get checkout summary from cart."""
-    from pharmacy_management.api.cart import get_cart
-    cart_data = get_cart()
-    
-    if cart_data["is_empty"]:
-        frappe.throw(_("Your cart is empty"))
-    
-    user = frappe.session.user
-    email = frappe.db.get_value("User", user, "email") or user
-    full_name = frappe.db.get_value("User", user, "full_name") or user
-    
-    # Get user addresses safely
-    customer = frappe.db.get_value("Customer", {"email_id": email}, "name")
-    addresses = []
-    if customer:
-        try:
-            address_links = frappe.get_all("Dynamic Link", 
-                filters={"link_doctype": "Customer", "link_name": customer, "parenttype": "Address"},
-                fields=["parent"])
-            for link in address_links:
-                try:
-                    addr = frappe.get_doc("Address", link.parent)
-                    addresses.append({
-                        "name": addr.name,
-                        "address_line1": addr.address_line1,
-                        "address_line2": addr.address_line2,
-                        "city": addr.city,
-                        "state": addr.state,
-                        "pincode": addr.pincode,
-                        "phone": addr.phone,
-                        "email_id": addr.email_id,
-                        "is_shipping": getattr(addr, "is_primary_shipping_address", 0),
-                        "is_billing": getattr(addr, "is_primary_billing_address", 0),
-                    })
-                except Exception:
-                    continue  # Skip any problematic addresses
-        except Exception:
-            pass  # No addresses available
-    
-    return {
-        "cart": cart_data,
-        "user": {
-            "full_name": full_name,
-            "email": email,
-            "mobile": frappe.db.get_value("User", user, "mobile_no") or "",
-        },
-        "addresses": addresses,
-    }
+def place_order_with_address(address_line1, city, state, pincode, country="India", 
+                              address_line2=None, phone=None, payment_method="COD", notes=None):
+    """Combined function: Create address AND place order in one call."""
+    try:
+        user = frappe.session.user
+        
+        if user == "Guest":
+            return {"success": False, "message": "Please login to place an order", "redirect": "/login"}
+        
+        email = frappe.db.get_value("User", user, "email") or user
+        full_name = frappe.db.get_value("User", user, "full_name") or user
+        
+        # Ensure customer exists
+        customer = frappe.db.get_value("Customer", {"email_id": email}, "name")
+        if not customer:
+            customer_group = frappe.db.get_single_value("Selling Settings", "customer_group") or "Individual"
+            territory = frappe.db.get_single_value("Selling Settings", "territory") or "India"
+            customer_doc = frappe.new_doc("Customer")
+            customer_doc.customer_name = full_name
+            customer_doc.customer_type = "Individual"
+            customer_doc.customer_group = customer_group
+            customer_doc.territory = territory
+            customer_doc.email_id = email
+            customer_doc.flags.ignore_permissions = True
+            customer_doc.insert(ignore_permissions=True, ignore_mandatory=True)
+            customer = customer_doc.name
+        
+        # Create address
+        addr = frappe.new_doc("Address")
+        addr.address_title = full_name
+        addr.address_type = "Shipping"
+        addr.address_line1 = address_line1
+        addr.address_line2 = address_line2 or ""
+        addr.city = city
+        addr.state = state
+        addr.pincode = pincode
+        addr.country = country
+        addr.phone = phone or ""
+        
+        # Set email_id field if exists
+        meta = frappe.get_meta("Address")
+        if meta.has_field("email_id"):
+            addr.email_id = email
+        if meta.has_field("is_primary_shipping_address"):
+            addr.is_primary_shipping_address = 1
+        if meta.has_field("is_shipping_address"):
+            addr.is_shipping_address = 1
+        
+        addr.flags.ignore_permissions = True
+        addr.append("links", {
+            "link_doctype": "Customer",
+            "link_name": customer,
+        })
+        addr.insert(ignore_permissions=True)
+        address_name = addr.name
+        
+        # Now place the order
+        cart = get_cart_data()
+        if not cart.get("items"):
+            return {"success": False, "message": "Your cart is empty"}
+        
+        # Check stock
+        for item in cart["items"]:
+            stock = frappe.db.get_value("Bin", {"item_code": item["medicine"]}, "actual_qty") or 0
+            if stock < item["qty"]:
+                return {"success": False, "message": f"Insufficient stock for {item['medicine_name']}"}
+        
+        # Get company
+        company = frappe.defaults.get_defaults().get("company") or frappe.db.get_single_value("Global Defaults", "default_company")
+        if not company:
+            companies = frappe.get_all("Company", limit=1, pluck="name")
+            company = companies[0] if companies else None
+        if not company:
+            return {"success": False, "message": "No Company found in ERPNext settings"}
+        
+        # Create Sales Order
+        so = frappe.new_doc("Sales Order")
+        so.customer = customer
+        so.transaction_date = frappe.utils.today()
+        so.delivery_date = frappe.utils.add_days(frappe.utils.today(), 3)
+        so.company = company
+        so.shipping_address_name = address_name
+        so.customer_address = address_name
+        if notes:
+            so.notes = notes
+        
+        for item in cart["items"]:
+            so.append("items", {
+                "item_code": item["medicine"],
+                "item_name": item["medicine_name"],
+                "qty": item["qty"],
+                "rate": item["rate"],
+                "delivery_date": frappe.utils.add_days(frappe.utils.today(), 3),
+            })
+        
+        # Apply coupon discount
+        if cart.get("coupon_code") and cart.get("coupon_discount", 0) > 0:
+            so.coupon_code = cart["coupon_code"]
+            so.discount_amount = cart["coupon_discount"]
+            so.apply_discount_on = "Grand Total"
+        
+        so.flags.ignore_permissions = True
+        so.insert(ignore_permissions=True)
+        
+        # Set custom fields
+        so.db_set("custom_order_source", "Website", update_modified=False)
+        so.db_set("custom_payment_method", payment_method, update_modified=False)
+        
+        # Handle based on payment method
+        if payment_method == "COD":
+            so.submit()
+            clear_cart()
+            return {
+                "success": True,
+                "order_id": so.name,
+                "payment_required": False,
+            }
+        elif payment_method == "UPI":
+            # Get UPI details
+            upi_id = frappe.db.get_single_value("Pharmacy Settings", "upi_id") or ""
+            upi_holder = frappe.db.get_single_value("Pharmacy Settings", "upi_holder_name") or ""
+            return {
+                "success": True,
+                "order_id": so.name,
+                "payment_required": True,
+                "payment_method": "UPI",
+                "upi_id": upi_id,
+                "upi_holder_name": upi_holder,
+                "grand_total": so.grand_total,
+            }
+        else:
+            # Card payment - return for Razorpay
+            return {
+                "success": True,
+                "order_id": so.name,
+                "payment_required": True,
+                "payment_method": "CARD",
+                "grand_total": so.grand_total,
+            }
+            
+    except Exception as e:
+        frappe.log_error(f"place_order_with_address failed: {str(e)}", "Pharmacy Checkout")
+        return {"success": False, "message": str(e)}

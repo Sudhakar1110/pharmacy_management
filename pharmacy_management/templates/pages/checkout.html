@@ -354,8 +354,8 @@ $('#checkoutForm').on('submit', function(e) {
     var btn = $('#placeOrderBtn');
     btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Placing Order...');
 
-    // Step 1: Save the address via API
-    saveAddressAndPlaceOrder(addr, btn);
+    // Combined function: save address AND place order in one call
+    placeOrderWithAddress(addr, btn);
 });
 
 function getAddressData() {
@@ -403,82 +403,36 @@ function getCsrfToken() {
     return '';
 }
 
-function saveAddressAndPlaceOrder(addr, btn) {
-    $.ajax({
-        url: '/api/method/pharmacy_management.api.customer.save_address',
-        type: 'POST',
-        data: addr,
-        headers: { 'X-Frappe-CSRF-Token': getCsrfToken() },
-        success: function(res) {
-            if (res.message && res.message.success) {
-                // Address saved, now place the order
-                var addressName = res.message.address_id;
-                placeOrder(addressName, btn);
-            } else if (res.message && res.message.redirect) {
-                // Guest user - redirect to login
-                btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
-                showToast(res.message.message || 'Please login to continue', 'warning');
-                window.location.href = res.message.redirect;
-            } else {
-                btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
-                showToast(res.message?.message || 'Failed to save address', 'danger');
-            }
-        },
-        error: function(xhr) {
-            btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
-            
-            var msg = 'Failed to save address. Please try again.';
-            var status = xhr.status;
-            
-            if (status === 403) {
-                msg = 'Please login to place an order';
-                window.location.href = '/login?redirect-to=/checkout';
-            } else if (status === 401) {
-                msg = 'Session expired. Please login again.';
-                window.location.href = '/login?redirect-to=/checkout';
-            } else {
-                try { 
-                    if (xhr.responseJSON && xhr.responseJSON._server_messages) {
-                        var msgs = JSON.parse(xhr.responseJSON._server_messages);
-                        msg = JSON.parse(msgs[0]).message || msg;
-                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                        msg = xhr.responseJSON.message;
-                    }
-                } catch(e) {}
-            }
-            
-            showToast(msg, 'danger');
-            console.error('Save address error:', xhr);
-        }
-    });
-}
-
-function placeOrder(addressName, btn) {
+// Combined function to save address AND place order in one API call
+function placeOrderWithAddress(addr, btn) {
     var notes = $('#orderNotes').val().trim();
-
+    
     $.ajax({
-        url: '/api/method/pharmacy_management.api.cart.place_order',
+        url: '/api/method/pharmacy_management.api.checkout.place_order_with_address',
         type: 'POST',
         data: {
-            address_name: addressName,
+            address_line1: addr.address_line1,
+            address_line2: addr.address_line2 || '',
+            city: addr.city,
+            state: addr.state,
+            pincode: addr.pincode,
+            phone: addr.phone || '',
+            country: 'India',
             payment_method: selectedPayment,
             notes: notes
         },
         headers: { 'X-Frappe-CSRF-Token': getCsrfToken() },
         success: function(res) {
-            var result = res.message;
+            var result = res.message || res;
             if (result && result.success) {
                 orderId = result.order_id;
                 console.log('Order placed successfully:', orderId);
 
                 if (selectedPayment === 'COD') {
-                    // COD: redirect straight to confirmation
                     showSuccessModal('Order Placed!', '/order-confirmation?order_id=' + encodeURIComponent(orderId));
                 } else if (selectedPayment === 'UPI') {
-                    // UPI: show QR code modal
                     showUpiModal(result);
                 } else {
-                    // CARD: initiate Razorpay (or test mode)
                     initiateCardPayment(orderId, btn);
                 }
             } else {
@@ -493,7 +447,6 @@ function placeOrder(addressName, btn) {
             
             var msg = 'Failed to place order. Please try again.';
             
-            // Try to get error message from response
             try { 
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     msg = xhr.responseJSON.message;
