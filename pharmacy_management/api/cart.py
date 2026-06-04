@@ -379,6 +379,7 @@ def place_order(address_name=None, payment_method="COD", prescription_ref=None, 
         return _place_order(address_name, payment_method, prescription_ref, notes)
     except Exception as e:
         frappe.log_error(f"place_order failed: {e}", "Pharmacy Order")
+        # Return error as dict for API calls
         return {"success": False, "message": str(e)}
 
 
@@ -389,6 +390,11 @@ def _place_order(address_name=None, payment_method="COD", prescription_ref=None,
         frappe.throw(_("Your cart is empty"))
 
     user = frappe.session.user
+    
+    # Guest user check - redirect to login
+    if user == "Guest":
+        frappe.throw(_("Please login to place an order"))
+    
     email = frappe.db.get_value("User", user, "email") or user
     full_name = frappe.db.get_value("User", user, "full_name") or user
 
@@ -406,14 +412,18 @@ def _place_order(address_name=None, payment_method="COD", prescription_ref=None,
         customer.flags.ignore_permissions = True
         customer.insert(ignore_permissions=True, ignore_mandatory=True)
 
-    # Validate address
-    if not address_name or not frappe.db.exists("Address", address_name):
+    # Validate address - must be provided or exist
+    if not address_name:
+        frappe.throw(_("Please provide a shipping address"))
+    
+    if not frappe.db.exists("Address", address_name):
+        # Try to find existing address
         addresses = frappe.get_all("Address",
             filters={"email_id": email}, fields=["name"], limit=1)
         if addresses:
             address_name = addresses[0].name
         else:
-            frappe.throw(_("Please provide a shipping address"))
+            frappe.throw(_("Shipping address not found. Please add an address first."))
 
     # Rx check — advisory, not blocking. Order is placed with "Prescription Pending" status.
     # The pharmacy will verify the Rx before dispensing.

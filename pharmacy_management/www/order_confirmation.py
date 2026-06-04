@@ -19,16 +19,26 @@ def _make_json_safe(obj):
     return obj
 
 
-def get_context(context):
+def get_context(context, **kwargs):
     """Render the order confirmation page."""
     context.no_sidebar = True
     context.no_breadcrumbs = True
     context.title = "Order Confirmation"
 
-    order_id = frappe.form_dict.get("order_id", "")
+    # Get order_id from kwargs (route parameter) or query string
+    order_id = kwargs.get("order_id") if kwargs else None
+    if not order_id:
+        order_id = frappe.form_dict.get("order_id", "")
+    
+    # Also check URL path for direct access like /order-confirmation/SAL-ORD-2024-00001
+    if not order_id:
+        path = frappe.local.request.path.strip("/")
+        parts = path.split("/")
+        if len(parts) >= 2 and parts[0] == "order-confirmation":
+            order_id = parts[1]
 
     if not order_id:
-        context.order_data = json.dumps({"error": "No order ID provided"})
+        context.order_data = json.dumps({"error": "No order ID provided. Please check your email for the order confirmation link."})
         return context
 
     try:

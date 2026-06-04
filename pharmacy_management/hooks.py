@@ -21,6 +21,7 @@ website_route_rules = [
     {"from_route": "/shop/<medicine_name>", "to_route": "medicine"},
     {"from_route": "/track-order/<order_id>", "to_route": "track_order"},
     {"from_route": "/medicine/<medicine_name>", "to_route": "medicine"},
+    {"from_route": "/order-confirmation", "to_route": "order_confirmation"},
 ]
 
 # Website page titles
