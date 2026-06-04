@@ -208,16 +208,6 @@ def get_addresses():
     return {"addresses": addresses}
 
 
-def _set_addr_field(addr, fieldname, value):
-    """Safely set a field on an Address doc if the field exists."""
-    try:
-        meta = frappe.get_meta("Address")
-        if meta.has_field(fieldname):
-            addr.set(fieldname, value)
-    except Exception:
-        pass  # Field doesn't exist, skip silently
-
-
 @frappe.whitelist()
 def save_address(address_line1, city, state, pincode, country="India", address_line2=None, phone=None, is_shipping=0, address_name=None):
     """Create or update a customer address."""
@@ -238,16 +228,21 @@ def save_address(address_line1, city, state, pincode, country="India", address_l
         if address_name and frappe.db.exists("Address", address_name):
             # Update existing
             addr = frappe.get_doc("Address", address_name)
+            addr.address_title = full_name
             addr.address_line1 = address_line1
             addr.address_line2 = address_line2
             addr.city = city
             addr.state = state
             addr.pincode = pincode
             addr.country = country
-            addr.phone = phone or addr.phone
-            _set_addr_field(addr, "is_primary_shipping_address", int(is_shipping))
+            addr.phone = phone or ""
+            # Set email_id field if exists
+            if "email_id" in [f.fieldname for f in addr.meta.fields]:
+                addr.email_id = email
+            if "is_primary_shipping_address" in [f.fieldname for f in addr.meta.fields]:
+                addr.is_primary_shipping_address = int(is_shipping)
             addr.flags.ignore_permissions = True
-            addr.save()
+            addr.save(ignore_permissions=True)
             return {"success": True, "address_id": addr.name, "message": _("Address updated")}
 
         # Deduplicate: check if an identical address already exists for this customer
@@ -267,29 +262,34 @@ def save_address(address_line1, city, state, pincode, country="India", address_l
                     existing_addr.address_line2 = address_line2 or existing_addr.address_line2
                     existing_addr.country = country or existing_addr.country
                     existing_addr.phone = phone or existing_addr.phone
-                    _set_addr_field(existing_addr, "is_primary_shipping_address", int(is_shipping))
+                    if "is_primary_shipping_address" in [f.fieldname for f in existing_addr.meta.fields]:
+                        existing_addr.is_primary_shipping_address = int(is_shipping)
                     existing_addr.flags.ignore_permissions = True
-                    existing_addr.save()
+                    existing_addr.save(ignore_permissions=True)
                     return {"success": True, "address_id": existing_addr.name, "message": _("Address updated")}
             except Exception:
                 continue
 
-        # Create new
+        # Create new address
         addr = frappe.new_doc("Address")
-        # Use a unique title to avoid naming collisions
-        timestamp = frappe.utils.now().replace(" ", "_").replace(":", "")[-8:]
-        addr.address_title = f"{full_name} - {city} - {timestamp}"
+        addr.address_title = full_name
         addr.address_type = "Shipping"
         addr.address_line1 = address_line1
-        addr.address_line2 = address_line2
+        addr.address_line2 = address_line2 or ""
         addr.city = city
         addr.state = state
         addr.pincode = pincode
         addr.country = country
         addr.phone = phone or ""
-        _set_addr_field(addr, "email_id", email)
-        _set_addr_field(addr, "is_primary_shipping_address", int(is_shipping))
-        _set_addr_field(addr, "is_shipping_address", int(is_shipping))
+        
+        # Set email_id field if exists
+        if "email_id" in [f.fieldname for f in addr.meta.fields]:
+            addr.email_id = email
+        if "is_primary_shipping_address" in [f.fieldname for f in addr.meta.fields]:
+            addr.is_primary_shipping_address = int(is_shipping)
+        if "is_shipping_address" in [f.fieldname for f in addr.meta.fields]:
+            addr.is_shipping_address = int(is_shipping)
+        
         addr.flags.ignore_permissions = True
         addr.append("links", {
             "link_doctype": "Customer",

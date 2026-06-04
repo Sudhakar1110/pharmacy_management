@@ -485,30 +485,23 @@ function placeOrder(addressName, btn) {
                 btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
                 var errMsg = result && result.message ? result.message : 'Failed to place order. Please try again.';
                 showToast(errMsg, 'danger');
+                console.log('Order placement failed:', result);
             }
         },
         error: function(xhr) {
             btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
             
             var msg = 'Failed to place order. Please try again.';
-            var status = xhr.status;
             
-            if (status === 403) {
-                msg = 'Please login to place an order';
-                window.location.href = '/login?redirect-to=/checkout';
-            } else if (status === 401) {
-                msg = 'Session expired. Please login again.';
-                window.location.href = '/login?redirect-to=/checkout';
-            } else {
-                try { 
-                    if (xhr.responseJSON && xhr.responseJSON._server_messages) {
-                        var msgs = JSON.parse(xhr.responseJSON._server_messages);
-                        msg = JSON.parse(msgs[0]).message || msg;
-                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                        msg = xhr.responseJSON.message;
-                    }
-                } catch(e) {}
-            }
+            // Try to get error message from response
+            try { 
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                } else if (xhr.responseJSON && xhr.responseJSON._server_messages) {
+                    var msgs = JSON.parse(xhr.responseJSON._server_messages);
+                    msg = JSON.parse(msgs[0]).message || msg;
+                }
+            } catch(e) {}
             
             showToast(msg, 'danger');
             console.error('Order placement failed:', xhr);
