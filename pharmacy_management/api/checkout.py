@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
-from pharmacy_management.api.cart import get_cart_data, clear_cart
+from pharmacy_management.api.cart import get_cart_data, clear_cart, get_cart, get_medicine_stock
+
 
 # ---------------------------------------------------------------------------
 # Constants / helpers
@@ -9,7 +10,7 @@ from pharmacy_management.api.cart import get_cart_data, clear_cart
 _ORDER_STATUS_DOCTYPE = "Order Status"
 _PHARMACY_SETTINGS = "Pharmacy Settings"
 
-# Cached once per request so repeated calls don't hit the DB.
+
 def _has_order_status_doctype() -> bool:
     key = "_pharmacy_has_order_status"
     if not hasattr(frappe.local, key):
@@ -42,7 +43,7 @@ def _get_current_user_info() -> dict:
 # Customer / Patient helpers
 # ---------------------------------------------------------------------------
 
-def ensure_customer(user: str | None = None) -> str:
+def ensure_customer(user: str = None) -> str:
     """Return existing Customer name or create one for *user* (defaults to session user)."""
     info = _get_current_user_info() if user is None else {
         "user": user,
@@ -103,38 +104,25 @@ def _ensure_patient(info: dict) -> None:
 # ---------------------------------------------------------------------------
 
 def _validate_cart_not_empty(cart: dict) -> None:
+    """Validate cart is not empty."""
     if not cart.get("items"):
         frappe.throw(_("Your cart is empty"))
-    
-    user = frappe.session.user
-    
-    # Ensure customer exists
-    customer_name = ensure_customer(user)
-    
-    # Get or create address
-    if not address_name:
-        # Try to get default shipping address
-        addresses = frappe.get_all("Address", 
-            filters={"email_id": frappe.db.get_value("User", user, "email") or user},
-            fields=["name"], limit=1)
-        if addresses:
-            address_name = addresses[0].name
-        else:
-            frappe.throw(_("Please provide a shipping address"))
-    
-    # Rx check — advisory, not blocking. Order is placed with "Prescription Pending" status.
-    rx_required = any(item.get("requires_prescription") for item in cart["items"])
-    # if rx_required and not prescription_ref:
-    #     frappe.throw(_("Some medicines require a valid prescription. Please upload one."))
-    
-    # Check stock availability
-    for item in cart["items"]:
-        stock = frappe.db.get_value("Bin", {"item_code": item["medicine"]}, "actual_qty") or 0
+
+
+def _validate_stock(items: list) -> None:
+    """Check stock availability for all items."""
+    for item in items:
+        stock = get_medicine_stock(item["medicine"])
         if stock < item["qty"]:
             frappe.throw(_("Insufficient stock for {0}. Available: {1}, Requested: {2}").format(
                 item["medicine_name"], int(stock), item["qty"]))
-    
-    # Create Sales Order
+
+
+def _build_sales_order(customer: str, address_name: str, cart: dict, notes: str = None) -> "frappe.Document":
+    """Build a Sales Order document from cart data (does NOT insert)."""
+    company = _get_company()
+    delivery_date = frappe.utils.add_days(frappe.utils.today(), 3)
+
     so = frappe.new_doc("Sales Order")
     so.update({
         "customer": customer,
@@ -167,8 +155,14 @@ def _validate_cart_not_empty(cart: dict) -> None:
 
 
 def _set_order_meta(so: "frappe.Document", payment_method: str) -> None:
-    so.db_set("custom_order_source", "Website", update_modified=False)
-    so.db_set("custom_payment_method", payment_method, update_modified=False)
+    try:
+        so.db_set("custom_order_source", "Website", update_modified=False)
+    except Exception:
+        pass
+    try:
+        so.db_set("custom_payment_method", payment_method, update_modified=False)
+    except Exception:
+        pass
 
 
 # ---------------------------------------------------------------------------
@@ -191,49 +185,19 @@ def create_order_status(so: "frappe.Document", status: str) -> None:
         frappe.log_error(frappe.get_traceback(), "create_order_status failed")
 
 
+def on_sales_order_submit(doc, method=None):
+    """Hook: When a Sales Order is submitted, create an Order Status record."""
+    try:
+        create_order_status(doc, "Confirmed")
+    except Exception:
+        pass
+
+
 # ---------------------------------------------------------------------------
 # Payment helpers
 # ---------------------------------------------------------------------------
 
-def generate_payment_request(so: "frappe.Document", payment_method: str) -> dict:
-    """Build payment gateway payload. Returns dict; raises on critical failures."""
-    info = _get_current_user_info()
-    payload = {
-        "amount": so.grand_total,
-        "order_id": so.name,
-        "customer_name": so.customer_name,
-        "customer_email": info["email"],
-        "customer_phone": info["mobile"],
-    }
-
-    if payment_method == "Razorpay":
-        import secrets
-        settings = frappe.get_single(_PHARMACY_SETTINGS)
-        key_id = settings.get("razorpay_key_id") or ""
-        key_secret = settings.get("razorpay_key_secret") or ""
-        receipt = f"receipt_{secrets.token_hex(4)}"
-
-        payload.update({"gateway": "razorpay", "key_id": key_id, "receipt": receipt})
-
-        if key_id and key_secret:
-            try:
-                import razorpay  # type: ignore
-                client = razorpay.Client(auth=(key_id, key_secret))
-                rp_order = client.order.create({
-                    "amount": int(so.grand_total * 100),
-                    "currency": "INR",
-                    "receipt": receipt,
-                })
-                payload["razorpay_order_id"] = rp_order["id"]
-            except ImportError:
-                frappe.log_error("razorpay SDK not installed", "generate_payment_request")
-            except Exception:
-                frappe.log_error(frappe.get_traceback(), "Razorpay order creation failed")
-
-    return payload
-
-
-def _handle_cod(so: "frappe.Document", prescription_ref: str | None) -> dict:
+def _handle_cod(so: "frappe.Document", prescription_ref: str = None) -> dict:
     _link_prescription(so, prescription_ref)
     so.submit()
     create_order_status(so, "Confirmed")
@@ -248,17 +212,16 @@ def _handle_cod(so: "frappe.Document", prescription_ref: str | None) -> dict:
 
 def _handle_online_payment(so: "frappe.Document", payment_method: str) -> dict:
     create_order_status(so, "Pending Payment")
-    payment_data = generate_payment_request(so, payment_method)
     return {
         "success": True,
         "order_id": so.name,
         "message": _("Redirecting to payment..."),
         "payment_required": True,
-        "payment_data": payment_data,
+        "payment_method": payment_method,
     }
 
 
-def _link_prescription(so: "frappe.Document", prescription_ref: str | None) -> None:
+def _link_prescription(so: "frappe.Document", prescription_ref: str = None) -> None:
     if not prescription_ref:
         return
     try:
@@ -271,15 +234,15 @@ def _link_prescription(so: "frappe.Document", prescription_ref: str | None) -> N
 
 
 # ---------------------------------------------------------------------------
-# Public API
+# Public API - Cart-based checkout (used by /checkout page)
 # ---------------------------------------------------------------------------
 
 @frappe.whitelist()
 def create_order(
-    address_name: str | None = None,
+    address_name: str = None,
     payment_method: str = "COD",
-    prescription_ref: str | None = None,
-    notes: str | None = None,
+    prescription_ref: str = None,
+    notes: str = None,
 ) -> dict:
     """Create a Sales Order from the session user's cart."""
     cart = get_cart_data()
@@ -297,9 +260,8 @@ def create_order(
         else:
             frappe.throw(_("Please provide a shipping address"))
 
-    # Prescription gate
-    if any(i.get("requires_prescription") for i in cart["items"]) and not prescription_ref:
-        frappe.throw(_("Some medicines require a valid prescription. Please upload one."))
+    # Rx check — advisory, not blocking. Order is placed with "Prescription Pending" status.
+    rx_required = any(i.get("requires_prescription") for i in cart["items"])
 
     _validate_stock(cart["items"])
 
@@ -309,18 +271,19 @@ def create_order(
     if payment_method == "COD":
         return _handle_cod(so, prescription_ref)
 
-    if payment_method in ("Razorpay", "PhonePe", "Stripe", "UPI"):
-        return _handle_online_payment(so, payment_method)
+    # For online payments — don't submit yet, just create draft
+    return _handle_online_payment(so, payment_method)
 
-    # Fallback — treat as COD
-    return _handle_cod(so, prescription_ref)
 
+# ---------------------------------------------------------------------------
+# Public API - Payment verification
+# ---------------------------------------------------------------------------
 
 @frappe.whitelist()
 def verify_payment(
     order_id: str,
     payment_id: str,
-    razorpay_order_id: str | None = None,
+    razorpay_order_id: str = None,
     payment_method: str = "Razorpay",
 ) -> dict:
     """Verify an online payment, submit the Sales Order, and record a Payment Entry."""
@@ -366,22 +329,21 @@ def verify_payment(
 @frappe.whitelist()
 def get_checkout_summary():
     """Get checkout summary from cart."""
-    from pharmacy_management.api.cart import get_cart
     cart_data = get_cart()
-    
+
     if cart_data["is_empty"]:
         frappe.throw(_("Your cart is empty"))
-    
+
     user = frappe.session.user
     email = frappe.db.get_value("User", user, "email") or user
     full_name = frappe.db.get_value("User", user, "full_name") or user
-    
+
     # Get user addresses safely
     customer = frappe.db.get_value("Customer", {"email_id": email}, "name")
     addresses = []
     if customer:
         try:
-            address_links = frappe.get_all("Dynamic Link", 
+            address_links = frappe.get_all("Dynamic Link",
                 filters={"link_doctype": "Customer", "link_name": customer, "parenttype": "Address"},
                 fields=["parent"])
             for link in address_links:
@@ -400,10 +362,10 @@ def get_checkout_summary():
                         "is_billing": getattr(addr, "is_primary_billing_address", 0),
                     })
                 except Exception:
-                    continue  # Skip any problematic addresses
+                    continue
         except Exception:
-            pass  # No addresses available
-    
+            pass
+
     return {
         "cart": cart_data,
         "user": {
