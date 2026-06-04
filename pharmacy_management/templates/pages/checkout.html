@@ -327,18 +327,24 @@ function saveNewAddress() {
         return;
     }
     
-    $.post('/api/method/pharmacy_management.api.customer.save_address', data, function(res) {
-        if (res.message.success) {
-            $('#addAddressModal').modal('hide');
-            $('#addressForm')[0].reset();
-            showToast('Address added!', 'success');
-            // Reload the page to get fresh data server-side
-            setTimeout(function() { window.location.reload(); }, 500);
-        } else {
-            showToast(res.message.message || 'Failed to save address. Please try again.', 'danger');
+    $.ajax({
+        url: '/api/method/pharmacy_management.api.customer.save_address',
+        type: 'POST',
+        data: data,
+        headers: { 'X-Frappe-CSRF-Token': frappe.csrf_token },
+        success: function(res) {
+            if (res.message.success) {
+                $('#addAddressModal').modal('hide');
+                $('#addressForm')[0].reset();
+                showToast('Address added!', 'success');
+                setTimeout(function() { window.location.reload(); }, 500);
+            } else {
+                showToast(res.message.message || 'Failed to save address. Please try again.', 'danger');
+            }
+        },
+        error: function(xhr) {
+            showToast(xhr.responseJSON?.message || 'Error saving address', 'danger');
         }
-    }).fail(function(xhr) {
-        showToast(xhr.responseJSON?.message || 'Error saving address', 'danger');
     });
 }
 
@@ -458,53 +464,73 @@ $('#checkoutForm').on('submit', function(e) {
             orderData.prescription_ref = prescriptionRef;
         }
         
-        $.post('/api/method/pharmacy_management.api.cart.place_order', orderData, function(res) {
-            var result = res.message;
-            if (result && result.success) {
-                // Show success on this page
-                showOrderSuccess({
-                    orderId: result.order_id,
-                    paymentRequired: result.payment_required,
-                    paymentMethod: result.payment_method,
-                    upiId: result.upi_id,
-                    upiHolderName: result.upi_holder_name,
-                    grandTotal: result.grand_total
-                });
-            } else {
-                btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order');
-                var errMsg = result && result.message ? result.message : 'Failed to place order';
-                showToast(errMsg, 'danger');
-            }
-        }).fail(function(xhr) {
-            btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order');
-            var msg = 'Failed to place order';
-            try {
-                // Frappe v15 returns error in responseJSON.message for frappe.throw()
-                if (xhr.responseJSON) {
-                    msg = xhr.responseJSON.message || xhr.responseJSON._error_message || msg;
-                } else if (xhr.responseText) {
-                    msg = xhr.responseText;
+        frappe.call({
+            method: 'pharmacy_management.api.cart.place_order',
+            args: orderData,
+            callback: function(res) {
+                var result = res.message;
+                if (result && result.success) {
+                    // Show success on this page
+                    showOrderSuccess({
+                        orderId: result.order_id,
+                        paymentRequired: result.payment_required,
+                        paymentMethod: result.payment_method,
+                        upiId: result.upi_id,
+                        upiHolderName: result.upi_holder_name,
+                        grandTotal: result.grand_total
+                    });
+                } else {
+                    btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order');
+                    var errMsg = result && result.message ? result.message : 'Failed to place order. Please try again.';
+                    showToast(errMsg, 'danger');
                 }
-            } catch(e) {
-                console.error('Error parsing response:', e, xhr);
+            },
+            error: function(xhr) {
+                btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order');
+                var msg = 'Failed to place order. Please try again.';
+                try {
+                    if (xhr && xhr.responseJSON) {
+                        if (xhr.responseJSON.message) {
+                            msg = typeof xhr.responseJSON.message === 'string' ? xhr.responseJSON.message : (xhr.responseJSON.message._server_messages || msg);
+                        } else if (xhr.responseJSON._server_messages) {
+                            var raw = xhr.responseJSON._server_messages;
+                            var msgs = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                            if (msgs && msgs.length) {
+                                var first = typeof msgs[0] === 'string' ? JSON.parse(msgs[0]) : msgs[0];
+                                msg = first.message || first.title || msg;
+                            }
+                        }
+                    }
+                } catch(e) {
+                    console.error('Error parsing response:', e, xhr);
+                }
+                console.error('Place order failed:', msg);
+                showToast(msg, 'danger');
             }
-            console.error('Place order failed:', msg);
-            showToast(msg, 'danger');
+        });
+    }
+    
+    function doPrescriptionUpload() {
+        btn.html('<span class="spinner-border spinner-border-sm"></span> Uploading prescription...');
+        frappe.call({
+            method: 'pharmacy_management.api.prescription.upload_prescription',
+            args: {
+                image: uploadedPrescription,
+                notes: $('#orderNotes').val()
+            },
+            callback: function(rxRes) {
+                var ref = rxRes.message && rxRes.message.success ? rxRes.message.prescription_id : null;
+                doPlaceOrder(ref);
+            },
+            error: function() {
+                showToast('Failed to upload prescription. You can upload it later from your orders page.', 'warning');
+                doPlaceOrder(null);
+            }
         });
     }
     
     if ($('#prescriptionSection').is(':visible') && uploadedPrescription) {
-        btn.html('<span class="spinner-border spinner-border-sm"></span> Uploading prescription...');
-        $.post('/api/method/pharmacy_management.api.prescription.upload_prescription', {
-            image: uploadedPrescription,
-            notes: $('#orderNotes').val()
-        }, function(rxRes) {
-            var ref = rxRes.message && rxRes.message.success ? rxRes.message.prescription_id : null;
-            doPlaceOrder(ref);
-        }).fail(function(xhr) {
-            showToast('Failed to upload prescription. You can upload it later from your orders page.', 'warning');
-            doPlaceOrder(null);
-        });
+        doPrescriptionUpload();
     } else {
         doPlaceOrder(null);
     }
@@ -616,32 +642,35 @@ function confirmUpiPayment(orderId) {
     btn.prop('disabled', true);
     $('#upiConfirmMsg').removeClass('d-none');
 
-    $.post('/api/method/pharmacy_management.api.cart.confirm_upi_payment', {
-        order_id: orderId
-    }, function(res) {
-        var data = res.message;
-        if (data && data.success) {
-            showToast('Payment confirmed! Order is now active.', 'success');
-            $('.checkout-page .container').html(`
-                <div class="text-center py-5">
-                    <i class="bi bi-check-circle-fill display-1 text-success"></i>
-                    <h3 class="mt-3 fw-bold">Payment Confirmed!</h3>
-                    <p class="text-muted">Order <strong>${orderId}</strong> is now confirmed.</p>
-                    <p class="text-muted">We will process and deliver your order soon.</p>
-                    <a href="/" class="btn btn-primary mt-3">
-                        <i class="bi bi-house"></i> Back to Home
-                    </a>
-                </div>
-            `);
-        } else {
+    frappe.call({
+        method: 'pharmacy_management.api.cart.confirm_upi_payment',
+        args: { order_id: orderId },
+        callback: function(res) {
+            var data = res.message;
+            if (data && data.success) {
+                showToast('Payment confirmed! Order is now active.', 'success');
+                $('.checkout-page .container').html(`
+                    <div class="text-center py-5">
+                        <i class="bi bi-check-circle-fill display-1 text-success"></i>
+                        <h3 class="mt-3 fw-bold">Payment Confirmed!</h3>
+                        <p class="text-muted">Order <strong>${orderId}</strong> is now confirmed.</p>
+                        <p class="text-muted">We will process and deliver your order soon.</p>
+                        <a href="/" class="btn btn-primary mt-3">
+                            <i class="bi bi-house"></i> Back to Home
+                        </a>
+                    </div>
+                `);
+            } else {
+                btn.prop('disabled', false);
+                $('#upiConfirmMsg').addClass('d-none');
+                showToast(data && data.message ? data.message : 'Failed to confirm payment', 'danger');
+            }
+        },
+        error: function() {
             btn.prop('disabled', false);
             $('#upiConfirmMsg').addClass('d-none');
-            showToast(data && data.message ? data.message : 'Failed to confirm payment', 'danger');
+            showToast('Failed to confirm payment. Please try again.', 'danger');
         }
-    }).fail(function() {
-        btn.prop('disabled', false);
-        $('#upiConfirmMsg').addClass('d-none');
-        showToast('Failed to confirm payment. Please try again.', 'danger');
     });
 }
 
@@ -661,12 +690,15 @@ function payNow(orderId) {
 
         // Test mode - no Razorpay keys, submit order directly
         if (data.test_mode) {
-            $.post('/api/method/pharmacy_management.api.cart.razorpay_verify', {
-                order_id: orderId,
-                razorpay_payment_id: 'test_payment',
-                razorpay_order_id: 'test_order',
-                razorpay_signature: 'test_signature'
-            }, function(verifyRes) {
+            frappe.call({
+                method: 'pharmacy_management.api.cart.razorpay_verify',
+                args: {
+                    order_id: orderId,
+                    razorpay_payment_id: 'test_payment',
+                    razorpay_order_id: 'test_order',
+                    razorpay_signature: 'test_signature'
+                },
+                callback: function(verifyRes) {
                 var vdata = verifyRes.message;
                 if (vdata && vdata.success) {
                     showToast('Payment successful! Order confirmed.', 'success');
@@ -685,13 +717,7 @@ function payNow(orderId) {
                     $('#paymentProcessingMsg').addClass('d-none');
                     showToast(vdata && vdata.message ? vdata.message : 'Payment verification failed', 'danger');
                 }
-            }).fail(function() {
-                btn.prop('disabled', false);
-                $('#paymentProcessingMsg').addClass('d-none');
-                showToast('Payment verification failed.', 'danger');
-            });
-            return;
-        }
+
 
         var options = {
             key: data.key_id,
@@ -703,12 +729,15 @@ function payNow(orderId) {
             prefill: data.prefill || {},
             theme: data.theme || { color: '#2563eb' },
             handler: function(response) {
-                $.post('/api/method/pharmacy_management.api.cart.razorpay_verify', {
-                    order_id: orderId,
-                    razorpay_payment_id: response.razorpay_payment_id,
-                    razorpay_order_id: response.razorpay_order_id,
-                    razorpay_signature: response.razorpay_signature
-                }, function(verifyRes) {
+                frappe.call({
+                    method: 'pharmacy_management.api.cart.razorpay_verify',
+                    args: {
+                        order_id: orderId,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_signature: response.razorpay_signature
+                    },
+                    callback: function(verifyRes) {
                     var vdata = verifyRes.message;
                     if (vdata && vdata.success) {
                         showToast('Payment successful! Order confirmed.', 'success');
@@ -727,10 +756,12 @@ function payNow(orderId) {
                         $('#paymentProcessingMsg').addClass('d-none');
                         showToast(vdata && vdata.message ? vdata.message : 'Payment verification failed', 'danger');
                     }
-                }).fail(function() {
+                },
+                error: function() {
                     btn.prop('disabled', false);
                     $('#paymentProcessingMsg').addClass('d-none');
                     showToast('Payment verification failed. Please contact support.', 'danger');
+                }
                 });
             },
             modal: {

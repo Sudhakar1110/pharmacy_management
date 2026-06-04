@@ -3,7 +3,7 @@ from frappe import _
 import json
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def upload_prescription(image=None, notes=None, order_id=None):
     """Upload a prescription from the website."""
     if not image:

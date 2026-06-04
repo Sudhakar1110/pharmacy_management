@@ -395,12 +395,16 @@ def _place_order(address_name=None, payment_method="COD", prescription_ref=None,
     # Ensure customer exists
     customer = frappe.db.get_value("Customer", {"email_id": email}, "name")
     if not customer:
+        customer_group = frappe.db.get_single_value("Selling Settings", "customer_group") or frappe.db.get_value("Customer Group", {"is_group": 0}, "name") or "Individual"
+        territory = frappe.db.get_single_value("Selling Settings", "territory") or frappe.db.get_value("Territory", {"is_group": 0}, "name") or "India"
         customer = frappe.new_doc("Customer")
         customer.customer_name = full_name
         customer.customer_type = "Individual"
+        customer.customer_group = customer_group
+        customer.territory = territory
         customer.email_id = email
         customer.flags.ignore_permissions = True
-        customer.insert(ignore_permissions=True)
+        customer.insert(ignore_permissions=True, ignore_mandatory=True)
 
     # Validate address
     if not address_name or not frappe.db.exists("Address", address_name):
