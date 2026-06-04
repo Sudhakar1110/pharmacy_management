@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from pharmacy_management.api.cart import get_medicine_stock
 
 
 def get_wishlist_key():
@@ -56,7 +57,7 @@ def get_wishlist():
     )
     
     for med in medicines:
-        stock = frappe.db.get_value("Bin", {"item_code": med.name}, "actual_qty") or 0
+        stock = get_medicine_stock(med.name)
         med.in_stock = stock > 0
         if med.mrp and med.selling_rate:
             med.discount_percent = round((1 - med.selling_rate / med.mrp) * 100, 1)

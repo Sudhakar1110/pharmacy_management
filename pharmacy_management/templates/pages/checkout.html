@@ -9,7 +9,7 @@
 
         <div class="row g-4">
             <div class="col-lg-8">
-                <form id="checkoutForm" action="/checkout" method="POST">
+                <form id="checkoutForm" action="javascript:void(0)" method="POST">
                     <input type="hidden" name="address_name" id="hiddenAddress">
                     <input type="hidden" name="payment_method" id="hiddenPayment">
                     <input type="hidden" name="notes" id="hiddenNotes">
@@ -609,40 +609,6 @@ function showOrderSuccess(opts) {
     `;
     
     $('.checkout-page .container').html(html);
-}
-
-function confirmUpiPayment(orderId) {
-    var btn = $('button:contains("Confirm Order")');
-    btn.prop('disabled', true);
-    $('#upiConfirmMsg').removeClass('d-none');
-
-    $.post('/api/method/pharmacy_management.api.cart.confirm_upi_payment', {
-        order_id: orderId
-    }, function(res) {
-        var data = res.message;
-        if (data && data.success) {
-            showToast('Payment confirmed! Order is now active.', 'success');
-            $('.checkout-page .container').html(`
-                <div class="text-center py-5">
-                    <i class="bi bi-check-circle-fill display-1 text-success"></i>
-                    <h3 class="mt-3 fw-bold">Payment Confirmed!</h3>
-                    <p class="text-muted">Order <strong>${orderId}</strong> is now confirmed.</p>
-                    <p class="text-muted">We will process and deliver your order soon.</p>
-                    <a href="/" class="btn btn-primary mt-3">
-                        <i class="bi bi-house"></i> Back to Home
-                    </a>
-                </div>
-            `);
-        } else {
-            btn.prop('disabled', false);
-            $('#upiConfirmMsg').addClass('d-none');
-            showToast(data && data.message ? data.message : 'Failed to confirm payment', 'danger');
-        }
-    }).fail(function() {
-        btn.prop('disabled', false);
-        $('#upiConfirmMsg').addClass('d-none');
-        showToast('Failed to confirm payment. Please try again.', 'danger');
-    });
 }
 
 function confirmUpiPayment(orderId) {

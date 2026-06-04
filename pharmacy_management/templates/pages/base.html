@@ -191,14 +191,26 @@
                     },
                     error: function(xhr) {
                         let errMsg = 'Server Error';
-                        if (xhr && xhr.responseJSON && xhr.responseJSON._server_messages) {
-                            try {
-                                const msgs = JSON.parse(xhr.responseJSON._server_messages);
-                                errMsg = JSON.parse(msgs[0]).message || errMsg;
-                            } catch(e) {}
-                        } else if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
-                            errMsg = xhr.responseJSON.message;
-                        } else if (xhr && xhr.status === 403) {
+                        try {
+                            if (xhr && xhr.responseJSON) {
+                                if (xhr.responseJSON._server_messages) {
+                                    const raw = xhr.responseJSON._server_messages;
+                                    // Frappe v15 may pre-parse or return as string
+                                    const msgs = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                                    if (msgs && msgs.length) {
+                                        const first = typeof msgs[0] === 'string' ? JSON.parse(msgs[0]) : msgs[0];
+                                        errMsg = first.message || first.title || errMsg;
+                                    }
+                                } else if (xhr.responseJSON.message) {
+                                    errMsg = xhr.responseJSON.message;
+                                } else if (xhr.responseJSON.exc) {
+                                    errMsg = xhr.responseJSON.exc;
+                                }
+                            }
+                        } catch(e) {
+                            // keep default errMsg
+                        }
+                        if (xhr && xhr.status === 403) {
                             errMsg = 'Session expired or invalid CSRF token. Please refresh the page.';
                         }
                         if (options.error) {
@@ -224,19 +236,7 @@
         updateWishlistBadge();
     });
     
-    function updateCartBadge() {
-        $.get('/api/method/pharmacy_management.api.cart.get_cart_count', function(res) {
-            const count = res.message.count;
-            $('.cart-badge').text(count).toggleClass('d-none', count === 0);
-        });
-    }
-    
-    function updateWishlistBadge() {
-        $.get('/api/method/pharmacy_management.api.wishlist.get_wishlist', function(res) {
-            const count = res.message.wishlist.length;
-            $('.wishlist-badge').text(count).toggleClass('d-none', count === 0);
-        });
-    }
+    // updateCartBadge and updateWishlistBadge defined in pharmacy.js
     </script>
 </body>
 </html>
