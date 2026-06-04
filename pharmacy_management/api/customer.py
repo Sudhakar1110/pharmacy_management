@@ -245,9 +245,39 @@ def save_address(address_line1, city, state, pincode, country="India", address_l
             addr.save()
             return {"success": True, "address_id": addr.name, "message": _("Address updated")}
 
+        # Deduplicate: check if an identical address already exists for this customer
+        def _norm(v):
+            return (v or "").strip().lower()
+        existing_links = frappe.get_all("Dynamic Link",
+            filters={"link_doctype": "Customer", "link_name": customer, "parenttype": "Address"},
+            fields=["parent"])
+        for link in existing_links:
+            try:
+                existing_addr = frappe.get_doc("Address", link.parent)
+                if (_norm(existing_addr.address_line1) == _norm(address_line1)
+                        and _norm(existing_addr.city) == _norm(city)
+                        and _norm(existing_addr.state) == _norm(state)
+                        and _norm(existing_addr.pincode) == _norm(pincode)):
+                if (norm(existing_addr.address_line1) == norm(address_line1)
+                        and norm(existing_addr.city) == norm(city)
+                        and norm(existing_addr.state) == norm(state)
+                        and norm(existing_addr.pincode) == norm(pincode)):
+                    # Update existing matching address
+                    existing_addr.address_line2 = address_line2 or existing_addr.address_line2
+                    existing_addr.country = country or existing_addr.country
+                    existing_addr.phone = phone or existing_addr.phone
+                    _set_addr_field(existing_addr, "is_primary_shipping_address", int(is_shipping))
+                    existing_addr.flags.ignore_permissions = True
+                    existing_addr.save()
+                    return {"success": True, "address_id": existing_addr.name, "message": _("Address updated")}
+            except Exception:
+                continue
+
         # Create new
         addr = frappe.new_doc("Address")
-        addr.address_title = f"{full_name} - {city}"
+        # Use a unique title to avoid naming collisions
+        timestamp = frappe.utils.now().replace(" ", "_").replace(":", "")[-8:]
+        addr.address_title = f"{full_name} - {city} - {timestamp}"
         addr.address_type = "Shipping"
         addr.address_line1 = address_line1
         addr.address_line2 = address_line2

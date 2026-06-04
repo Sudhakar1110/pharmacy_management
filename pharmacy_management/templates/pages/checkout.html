@@ -261,25 +261,38 @@ function escapeHtml(str) {
 }
 
 function renderAddresses(addresses) {
+    // Deduplicate addresses on frontend by address content (line1+city+state+pincode)
+    var seen = {};
+    var uniqueAddresses = [];
+    addresses.forEach(function(addr) {
+        var key = (addr.address_line1 + '|' + addr.city + '|' + addr.state + '|' + addr.pincode).toLowerCase().replace(/\s+/g, ' ').trim();
+        if (!seen[key]) {
+            seen[key] = true;
+            uniqueAddresses.push(addr);
+        }
+    });
+    addresses = uniqueAddresses;
+
     if (addresses.length > 0) {
+        let hasShipping = addresses.some(function(a) { return a.is_shipping; });
         let html = '<div class="row g-2">';
         addresses.forEach(function(addr) {
-            const checked = addr.is_shipping ? 'checked' : '';
+            const checked = (!hasShipping && addr === addresses[0]) || addr.is_shipping ? 'checked' : '';
             html += `
                 <div class="col-12">
-                    <div class="form-check address-card p-3 border rounded ${addr.is_shipping ? 'border-primary' : ''}">
+                    <div class="form-check address-card p-3 border rounded ${checked ? 'border-primary' : ''}">
                         <input class="form-check-input" type="radio" name="address" 
                                value="${addr.name}" ${checked}
                                onchange="selectAddress('${addr.name}')">
                         <label class="form-check-label w-100">
-                            <strong>${addr.address_line1}</strong>
-                            ${addr.address_line2 ? `<br>${addr.address_line2}` : ''}
-                            <br>${addr.city}, ${addr.state} - ${addr.pincode}
-                            ${addr.phone ? `<br><small class="text-muted">Phone: ${addr.phone}</small>` : ''}
+                            <strong>${escapeHtml(addr.address_line1)}</strong>
+                            ${addr.address_line2 ? `<br>${escapeHtml(addr.address_line2)}` : ''}
+                            <br>${escapeHtml(addr.city)}, ${escapeHtml(addr.state)} - ${escapeHtml(addr.pincode)}
+                            ${addr.phone ? `<br><small class="text-muted">Phone: ${escapeHtml(addr.phone)}</small>` : ''}
                         </label>
                     </div>
                 </div>`;
-            if (addr.is_shipping) selectedAddress = addr.name;
+            if (checked) selectedAddress = addr.name;
         });
         html += `
             <div class="col-12 mt-2">
@@ -699,45 +712,6 @@ function payNow(orderId) {
                     razorpay_signature: 'test_signature'
                 },
                 callback: function(verifyRes) {
-                var vdata = verifyRes.message;
-                if (vdata && vdata.success) {
-                    showToast('Payment successful! Order confirmed.', 'success');
-                    $('.checkout-page .container').html(`
-                        <div class="text-center py-5">
-                            <i class="bi bi-check-circle-fill display-1 text-success"></i>
-                            <h3 class="mt-3 fw-bold">Payment Successful!</h3>
-                            <p class="text-muted">Order <strong>${orderId}</strong> is confirmed.</p>
-                            <a href="/" class="btn btn-primary mt-3">
-                                <i class="bi bi-house"></i> Back to Home
-                            </a>
-                        </div>
-                    `);
-                } else {
-                    btn.prop('disabled', false);
-                    $('#paymentProcessingMsg').addClass('d-none');
-                    showToast(vdata && vdata.message ? vdata.message : 'Payment verification failed', 'danger');
-                }
-
-
-        var options = {
-            key: data.key_id,
-            amount: data.amount,
-            currency: data.currency || 'INR',
-            name: 'Pharmacy Management',
-            description: 'Order ' + orderId,
-            order_id: data.razorpay_order_id,
-            prefill: data.prefill || {},
-            theme: data.theme || { color: '#2563eb' },
-            handler: function(response) {
-                frappe.call({
-                    method: 'pharmacy_management.api.cart.razorpay_verify',
-                    args: {
-                        order_id: orderId,
-                        razorpay_payment_id: response.razorpay_payment_id,
-                        razorpay_order_id: response.razorpay_order_id,
-                        razorpay_signature: response.razorpay_signature
-                    },
-                    callback: function(verifyRes) {
                     var vdata = verifyRes.message;
                     if (vdata && vdata.success) {
                         showToast('Payment successful! Order confirmed.', 'success');
@@ -762,6 +736,54 @@ function payNow(orderId) {
                     $('#paymentProcessingMsg').addClass('d-none');
                     showToast('Payment verification failed. Please contact support.', 'danger');
                 }
+            });
+            return;
+        }
+
+        // Real Razorpay mode
+        var options = {
+            key: data.key_id,
+            amount: data.amount,
+            currency: data.currency || 'INR',
+            name: 'Pharmacy Management',
+            description: 'Order ' + orderId,
+            order_id: data.razorpay_order_id,
+            prefill: data.prefill || {},
+            theme: data.theme || { color: '#2563eb' },
+            handler: function(response) {
+                frappe.call({
+                    method: 'pharmacy_management.api.cart.razorpay_verify',
+                    args: {
+                        order_id: orderId,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_signature: response.razorpay_signature
+                    },
+                    callback: function(verifyRes) {
+                        var vdata = verifyRes.message;
+                        if (vdata && vdata.success) {
+                            showToast('Payment successful! Order confirmed.', 'success');
+                            $('.checkout-page .container').html(`
+                                <div class="text-center py-5">
+                                    <i class="bi bi-check-circle-fill display-1 text-success"></i>
+                                    <h3 class="mt-3 fw-bold">Payment Successful!</h3>
+                                    <p class="text-muted">Order <strong>${orderId}</strong> is confirmed.</p>
+                                    <a href="/" class="btn btn-primary mt-3">
+                                        <i class="bi bi-house"></i> Back to Home
+                                    </a>
+                                </div>
+                            `);
+                        } else {
+                            btn.prop('disabled', false);
+                            $('#paymentProcessingMsg').addClass('d-none');
+                            showToast(vdata && vdata.message ? vdata.message : 'Payment verification failed', 'danger');
+                        }
+                    },
+                    error: function() {
+                        btn.prop('disabled', false);
+                        $('#paymentProcessingMsg').addClass('d-none');
+                        showToast('Payment verification failed. Please contact support.', 'danger');
+                    }
                 });
             },
             modal: {
@@ -783,51 +805,7 @@ function payNow(orderId) {
     });
 }
 
-function initiatePayment(orderResult) {
-    const pd = orderResult.payment_data;
-    
-    if (pd.gateway === 'razorpay') {
-        const options = {
-            key: pd.key_id,
-            amount: pd.amount,
-            currency: pd.currency || 'INR',
-            name: 'Pharmacy Management',
-            description: `Order ${pd.order_id}`,
-            order_id: pd.razorpay_order_id,
-            prefill: pd.prefill,
-            theme: pd.theme,
-            handler: function(response) {
-                $.post('/api/method/pharmacy_management.api.checkout.verify_payment', {
-                    order_id: pd.order_id,
-                    payment_id: response.razorpay_payment_id,
-                    razorpay_order_id: response.razorpay_order_id,
-                    payment_method: 'Razorpay'
-                }, function() {
-                    window.location.href = '/track-order?order_id=' + encodeURIComponent(pd.order_id) + '&success=1';
-                });
-            },
-            modal: {
-                ondismiss: function() {
-                    $('#paymentModal').modal('hide');
-                    showToast('Payment cancelled. You can retry from your orders page.', 'info');
-                }
-            }
-        };
-        const rzp = new Razorpay(options);
-        rzp.open();
-    } else if (pd.gateway === 'stripe') {
-        // Stripe integration
-        $('#paymentModalBody').html(`
-            <i class="bi bi-credit-card display-1 text-primary"></i>
-            <h5 class="mt-3">Stripe Payment</h5>
-            <p>Amount: ₹${(pd.amount / 100).toFixed(2)}</p>
-            <div id="stripeCard" class="mt-3"></div>
-        `);
-    } else {
-        // COD / UPI - fallback
-        window.location.href = '/track-order?order_id=' + encodeURIComponent(pd.order_id) + '&success=1';
-    }
-}
+
 
 function showToast(message, type) {
     const toast = $(`
