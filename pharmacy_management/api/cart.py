@@ -372,7 +372,7 @@ def get_cart_count():
     return {"count": count}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def place_order(address_name=None, payment_method="COD", prescription_ref=None, notes=None):
     """Place an order from the cart."""
     try:

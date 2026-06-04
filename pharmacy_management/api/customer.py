@@ -208,7 +208,7 @@ def get_addresses():
     return {"addresses": addresses}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def save_address(address_line1, city, state, pincode, country="India", address_line2=None, phone=None, is_shipping=0, address_name=None):
     """Create or update a customer address."""
     try:
