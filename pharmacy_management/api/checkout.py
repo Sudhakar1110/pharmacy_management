@@ -27,10 +27,10 @@ def create_order(address_name=None, payment_method="COD", prescription_ref=None,
         else:
             frappe.throw(_("Please provide a shipping address"))
     
-    # Validate prescription if needed
+    # Rx check — advisory, not blocking. Order is placed with "Prescription Pending" status.
     rx_required = any(item.get("requires_prescription") for item in cart["items"])
-    if rx_required and not prescription_ref:
-        frappe.throw(_("Some medicines require a valid prescription. Please upload one."))
+    # if rx_required and not prescription_ref:
+    #     frappe.throw(_("Some medicines require a valid prescription. Please upload one."))
     
     # Check stock availability
     for item in cart["items"]:
@@ -290,7 +290,7 @@ def get_checkout_summary():
                         "pincode": addr.pincode,
                         "phone": addr.phone,
                         "email_id": addr.email_id,
-                        "is_shipping": getattr(addr, "is_primary_shipping_address", 0),
+                        "is_shipping": getattr(addr, "is_shipping_address", 0),
                         "is_billing": getattr(addr, "is_primary_billing_address", 0),
                     })
                 except Exception:

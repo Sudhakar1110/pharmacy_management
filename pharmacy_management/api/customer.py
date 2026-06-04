@@ -201,8 +201,8 @@ def get_addresses():
             "pincode": addr.pincode,
             "phone": addr.phone,
             "email_id": addr.email_id,
-            "is_shipping": addr.is_primary_shipping_address,
-            "is_billing": addr.is_primary_billing_address,
+            "is_shipping": getattr(addr, "is_shipping_address", 0),
+            "is_billing": getattr(addr, "is_primary_billing_address", 0),
         })
     
     return {"addresses": addresses}
@@ -240,7 +240,7 @@ def save_address(address_line1, city, state, pincode, country="India", address_l
             addr.pincode = pincode
             addr.country = country
             addr.phone = phone or addr.phone
-            _set_addr_field(addr, "is_primary_shipping_address", int(is_shipping))
+            _set_addr_field(addr, "is_shipping_address", int(is_shipping))
             addr.flags.ignore_permissions = True
             addr.save()
             return {"success": True, "address_id": addr.name, "message": _("Address updated")}
@@ -262,7 +262,7 @@ def save_address(address_line1, city, state, pincode, country="India", address_l
                     existing_addr.address_line2 = address_line2 or existing_addr.address_line2
                     existing_addr.country = country or existing_addr.country
                     existing_addr.phone = phone or existing_addr.phone
-                    _set_addr_field(existing_addr, "is_primary_shipping_address", int(is_shipping))
+                    _set_addr_field(existing_addr, "is_shipping_address", int(is_shipping))
                     existing_addr.flags.ignore_permissions = True
                     existing_addr.save()
                     return {"success": True, "address_id": existing_addr.name, "message": _("Address updated")}
@@ -283,7 +283,6 @@ def save_address(address_line1, city, state, pincode, country="India", address_l
         addr.country = country
         addr.phone = phone or ""
         _set_addr_field(addr, "email_id", email)
-        _set_addr_field(addr, "is_primary_shipping_address", int(is_shipping))
         _set_addr_field(addr, "is_shipping_address", int(is_shipping))
         addr.flags.ignore_permissions = True
         addr.append("links", {
@@ -301,11 +300,15 @@ def save_address(address_line1, city, state, pincode, country="India", address_l
 @frappe.whitelist(allow_guest=True)
 def delete_address(address_name):
     """Delete a customer address."""
-    if not frappe.db.exists("Address", address_name):
-        frappe.throw(_("Address not found"))
-    
-    frappe.delete_doc("Address", address_name, ignore_permissions=True)
-    return {"success": True, "message": _("Address deleted")}
+    try:
+        if not address_name or not frappe.db.exists("Address", address_name):
+            return {"success": False, "message": _("Address not found")}
+        
+        frappe.delete_doc("Address", address_name, ignore_permissions=True)
+        return {"success": True, "message": _("Address deleted")}
+    except Exception as e:
+        frappe.log_error(f"Delete address failed: {e}", "Pharmacy Address")
+        return {"success": False, "message": str(e)}
 
 
 @frappe.whitelist(allow_guest=True)

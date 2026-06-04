@@ -505,11 +505,8 @@ def _place_order(address_name=None, payment_method="COD", prescription_ref=None,
         clear_cart()
         return {"success": True, "order_id": so.name, "payment_required": False}
     elif payment_method == "UPI":
-        # Order is NOT submitted yet — payment must happen first via QR code.
-        # Rx verification happens at dispensing regardless.
         create_order_status_record(so, "Pending Payment")
         clear_cart()
-        # Get UPI details from Pharmacy Settings (use db.get_single_value to bypass permission checks)
         upi_id = frappe.db.get_single_value("Pharmacy Settings", "upi_id") or ""
         upi_holder = frappe.db.get_single_value("Pharmacy Settings", "upi_holder_name") or ""
         return {
@@ -521,6 +518,10 @@ def _place_order(address_name=None, payment_method="COD", prescription_ref=None,
             "upi_holder_name": upi_holder,
             "grand_total": so.grand_total,
         }
+    elif payment_method == "CARD":
+        create_order_status_record(so, "Pending Payment")
+        clear_cart()
+        return {"success": True, "order_id": so.name, "payment_required": True, "payment_method": "CARD"}
     else:
         create_order_status_record(so, "Pending Payment")
         clear_cart()
@@ -570,7 +571,7 @@ def get_checkout_summary():
                         "pincode": addr.pincode,
                         "phone": addr.phone,
                         "email_id": addr.email_id,
-                        "is_shipping": getattr(addr, "is_primary_shipping_address", 0),
+                        "is_shipping": getattr(addr, "is_shipping_address", 0),
                         "is_billing": getattr(addr, "is_primary_billing_address", 0),
                     })
                 except Exception:
