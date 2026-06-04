@@ -415,10 +415,9 @@ def _place_order(address_name=None, payment_method="COD", prescription_ref=None,
         else:
             frappe.throw(_("Please provide a shipping address"))
 
-    # Validate prescription
+    # Rx check — advisory, not blocking. Order is placed with "Prescription Pending" status.
+    # The pharmacy will verify the Rx before dispensing.
     rx_required = any(item.get("requires_prescription") for item in cart["items"])
-    if rx_required and not prescription_ref:
-        frappe.throw(_("Some medicines require a valid prescription. Please upload one."))
 
     # Check stock using the same unified stock check as add_to_cart/get_cart
     for item in cart["items"]:
@@ -497,12 +496,17 @@ def _place_order(address_name=None, payment_method="COD", prescription_ref=None,
     except Exception:
         pass
 
+    # Determine initial status
+    initial_status = "Prescription Pending" if (rx_required and not prescription_ref) else "Confirmed"
+
     if payment_method == "COD":
         so.submit()
-        create_order_status_record(so, "Confirmed")
+        create_order_status_record(so, initial_status)
         clear_cart()
         return {"success": True, "order_id": so.name, "payment_required": False}
     elif payment_method == "UPI":
+        # Order is NOT submitted yet — payment must happen first via QR code.
+        # Rx verification happens at dispensing regardless.
         create_order_status_record(so, "Pending Payment")
         clear_cart()
         # Get UPI details from Pharmacy Settings (use db.get_single_value to bypass permission checks)
