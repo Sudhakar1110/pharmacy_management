@@ -218,11 +218,16 @@ def _set_addr_field(addr, fieldname, value):
         pass  # Field doesn't exist, skip silently
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def save_address(address_line1, city, state, pincode, country="India", address_line2=None, phone=None, is_shipping=0, address_name=None):
     """Create or update a customer address."""
     try:
         user = frappe.session.user
+        
+        # Guest users must login first
+        if user == "Guest":
+            return {"success": False, "message": "Please login to save your address", "redirect": "/login?redirect-to=/checkout"}
+        
         email = frappe.db.get_value("User", user, "email") or user
         full_name = frappe.db.get_value("User", user, "full_name") or user
 

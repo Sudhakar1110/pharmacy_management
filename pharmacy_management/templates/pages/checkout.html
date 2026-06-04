@@ -414,6 +414,11 @@ function saveAddressAndPlaceOrder(addr, btn) {
                 // Address saved, now place the order
                 var addressName = res.message.address_id;
                 placeOrder(addressName, btn);
+            } else if (res.message && res.message.redirect) {
+                // Guest user - redirect to login
+                btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
+                showToast(res.message.message || 'Please login to continue', 'warning');
+                window.location.href = res.message.redirect;
             } else {
                 btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
                 showToast(res.message?.message || 'Failed to save address', 'danger');
@@ -421,15 +426,27 @@ function saveAddressAndPlaceOrder(addr, btn) {
         },
         error: function(xhr) {
             btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
+            
             var msg = 'Failed to save address. Please try again.';
-            try { 
-                if (xhr.responseJSON && xhr.responseJSON._server_messages) {
-                    var msgs = JSON.parse(xhr.responseJSON._server_messages);
-                    msg = JSON.parse(msgs[0]).message || msg;
-                } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                    msg = xhr.responseJSON.message;
-                }
-            } catch(e) {}
+            var status = xhr.status;
+            
+            if (status === 403) {
+                msg = 'Please login to place an order';
+                window.location.href = '/login?redirect-to=/checkout';
+            } else if (status === 401) {
+                msg = 'Session expired. Please login again.';
+                window.location.href = '/login?redirect-to=/checkout';
+            } else {
+                try { 
+                    if (xhr.responseJSON && xhr.responseJSON._server_messages) {
+                        var msgs = JSON.parse(xhr.responseJSON._server_messages);
+                        msg = JSON.parse(msgs[0]).message || msg;
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                } catch(e) {}
+            }
+            
             showToast(msg, 'danger');
             console.error('Save address error:', xhr);
         }
@@ -472,15 +489,27 @@ function placeOrder(addressName, btn) {
         },
         error: function(xhr) {
             btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
+            
             var msg = 'Failed to place order. Please try again.';
-            try { 
-                if (xhr.responseJSON && xhr.responseJSON._server_messages) {
-                    var msgs = JSON.parse(xhr.responseJSON._server_messages);
-                    msg = JSON.parse(msgs[0]).message || msg;
-                } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                    msg = xhr.responseJSON.message;
-                }
-            } catch(e) {}
+            var status = xhr.status;
+            
+            if (status === 403) {
+                msg = 'Please login to place an order';
+                window.location.href = '/login?redirect-to=/checkout';
+            } else if (status === 401) {
+                msg = 'Session expired. Please login again.';
+                window.location.href = '/login?redirect-to=/checkout';
+            } else {
+                try { 
+                    if (xhr.responseJSON && xhr.responseJSON._server_messages) {
+                        var msgs = JSON.parse(xhr.responseJSON._server_messages);
+                        msg = JSON.parse(msgs[0]).message || msg;
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                } catch(e) {}
+            }
+            
             showToast(msg, 'danger');
             console.error('Order placement failed:', xhr);
         }
