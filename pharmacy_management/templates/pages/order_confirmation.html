@@ -1,0 +1,234 @@
+{% extends "templates/pages/base.html" %}
+
+{% block title %}Order Confirmed - Pharmacy Management{% endblock %}
+
+{% block content %}
+<div class="confirmation-page">
+    <div class="container py-4">
+        <div id="confirmationContent">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading order confirmation...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+var orderData = null;
+
+$(document).ready(function() {
+    try {
+        orderData = {{ order_data|safe }};
+    } catch(e) {
+        orderData = { error: 'Failed to parse order data' };
+    }
+    renderConfirmation();
+});
+
+function renderConfirmation() {
+    if (!orderData || orderData.error) {
+        $('#confirmationContent').html(`
+            <div class="text-center py-5">
+                <i class="bi bi-exclamation-triangle display-3 text-warning"></i>
+                <h4 class="mt-3">Order Not Found</h4>
+                <p class="text-muted">${escapeHtml(orderData ? orderData.error : 'Invalid order data')}</p>
+                <a href="/my-orders" class="btn btn-primary"><i class="bi bi-box"></i> My Orders</a>
+                <a href="/" class="btn btn-outline-secondary ms-2"><i class="bi bi-house"></i> Home</a>
+            </div>
+        `);
+        return;
+    }
+
+    var isConfirming = orderData.docstatus === 0;
+    var statusBadgeClass = orderData.docstatus === 1 ? 'bg-success' : 'bg-warning text-dark';
+    var statusIcon = orderData.docstatus === 1 ? 'bi-check-circle-fill' : 'bi-clock-fill';
+    var statusText = orderData.docstatus === 1 ? 'Order Confirmed' : 'Payment Pending';
+
+    var html = `
+        <!-- Success Header -->
+        <div class="text-center mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center bg-success-subtle rounded-circle mb-3" style="width: 80px; height: 80px;">
+                <i class="bi ${statusIcon} text-success display-4"></i>
+            </div>
+            <h2 class="fw-bold">Thank You, ${escapeHtml(orderData.customer_name || 'Valued Customer')}!</h2>
+            <p class="text-muted mb-1">Your order has been placed successfully.</p>
+            <p class="mb-3">
+                <span class="badge ${statusBadgeClass} fs-6 px-3 py-2">${statusText}</span>
+                <span class="badge bg-info fs-6 px-3 py-2 ms-2">${escapeHtml(orderData.payment_method || 'COD')}</span>
+            </p>
+        </div>
+
+        <div class="row g-4">
+            <!-- Order Details -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0"><i class="bi bi-receipt"></i> Order Details</h5>
+                            <span class="text-primary fw-semibold">#${escapeHtml(orderData.order_id)}</span>
+                        </div>
+                        <hr>
+
+                        <!-- Order Info Grid -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-6">
+                                <div class="bg-light rounded-3 p-3">
+                                    <small class="text-muted d-block">Order Date</small>
+                                    <span class="fw-semibold">${escapeHtml(orderData.transaction_date)}</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="bg-light rounded-3 p-3">
+                                    <small class="text-muted d-block">Expected Delivery</small>
+                                    <span class="fw-semibold">${escapeHtml(orderData.delivery_date)}</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="bg-light rounded-3 p-3">
+                                    <small class="text-muted d-block">Payment Method</small>
+                                    <span class="fw-semibold">${escapeHtml(orderData.payment_method || 'Cash on Delivery')}</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="bg-light rounded-3 p-3">
+                                    <small class="text-muted d-block">Order Status</small>
+                                    <span class="fw-semibold">${escapeHtml(orderData.status || 'Confirmed')}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Order Items -->
+                        <h6 class="fw-bold mt-4 mb-3"><i class="bi bi-cart3"></i> Items Ordered (${orderData.items ? orderData.items.length : 0})</h6>
+                        <div class="table-responsive">
+                            <table class="table table-borderless align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Item</th>
+                                        <th class="text-center">Qty</th>
+                                        <th class="text-end">Rate</th>
+                                        <th class="text-end">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${(orderData.items || []).map(function(item) {
+                                        return `<tr>
+                                            <td><span class="fw-semibold">${escapeHtml(item.item_name)}</span><br><small class="text-muted">${escapeHtml(item.item_code)}</small></td>
+                                            <td class="text-center">${item.qty}</td>
+                                            <td class="text-end">₹${parseFloat(item.rate).toFixed(2)}</td>
+                                            <td class="text-end fw-semibold">₹${parseFloat(item.amount).toFixed(2)}</td>
+                                        </tr>`;
+                                    }).join('')}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" class="text-end fw-bold">Total</td>
+                                        <td class="text-end fw-bold fs-5 text-primary">₹${parseFloat(orderData.grand_total).toFixed(2)}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar -->
+            <div class="col-lg-4">
+                <!-- Delivery Address -->
+                ${orderData.address && orderData.address.address_line1 ? `
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-geo-alt"></i> Delivery Address</h6>
+                        <p class="mb-1">${escapeHtml(orderData.address.address_line1)}</p>
+                        ${orderData.address.address_line2 ? `<p class="mb-1">${escapeHtml(orderData.address.address_line2)}</p>` : ''}
+                        <p class="mb-1">${escapeHtml(orderData.address.city)}, ${escapeHtml(orderData.address.state)} - ${escapeHtml(orderData.address.pincode)}</p>
+                        ${orderData.address.phone ? `<p class="mb-0"><i class="bi bi-telephone"></i> ${escapeHtml(orderData.address.phone)}</p>` : ''}
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- What's Next -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-clock-history"></i> What's Next?</h6>
+                        <ol class="list-unstyled mb-0">
+                            <li class="mb-3 d-flex">
+                                <span class="badge bg-success rounded-circle me-2" style="width: 22px; height: 22px; line-height: 16px;">✓</span>
+                                <small>Order placed and confirmed</small>
+                            </li>
+                            <li class="mb-3 d-flex">
+                                <span class="badge bg-secondary rounded-circle me-2" style="width: 22px; height: 22px; line-height: 16px;">2</span>
+                                <small>Pharmacy prepares your medicines</small>
+                            </li>
+                            <li class="mb-3 d-flex">
+                                <span class="badge bg-secondary rounded-circle me-2" style="width: 22px; height: 22px; line-height: 16px;">3</span>
+                                <small>Quality check & packing</small>
+                            </li>
+                            <li class="d-flex">
+                                <span class="badge bg-secondary rounded-circle me-2" style="width: 22px; height: 22px; line-height: 16px;">4</span>
+                                <small>Dispatch & delivery to your address</small>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="d-grid gap-2">
+                    <a href="/my-orders" class="btn btn-outline-primary">
+                        <i class="bi bi-box"></i> View All Orders
+                    </a>
+                    <a href="/track-order?order_id=${encodeURIComponent(orderData.order_id)}" class="btn btn-outline-secondary">
+                        <i class="bi bi-truck"></i> Track Order
+                    </a>
+                    <a href="/shop" class="btn btn-primary">
+                        <i class="bi bi-shop"></i> Continue Shopping
+                    </a>
+                </div>
+
+                <!-- Need Help? -->
+                <div class="card border-0 shadow-sm mt-3 bg-primary-subtle">
+                    <div class="card-body p-3 text-center">
+                        <i class="bi bi-headset text-primary fs-4"></i>
+                        <h6 class="fw-bold mt-1">Need Help?</h6>
+                        <small class="text-muted">Contact our support team</small>
+                        <p class="mb-0 fw-semibold small">+91 00000 00000 | support@pharmacy.com</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    $('#confirmationContent').html(html);
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(String(str)));
+    return div.innerHTML;
+}
+
+function showToast(message, type) {
+    var iconMap = { success: 'bi-check-circle-fill', danger: 'bi-exclamation-circle-fill', warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill' };
+    var toast = $(`
+        <div class="toast align-items-center text-bg-${type} border-0 position-fixed bottom-0 end-0 m-3" role="alert">
+            <div class="d-flex">
+                <div class="toast-body"><i class="bi ${iconMap[type] || 'bi-info-circle-fill'} me-2"></i>${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `);
+    $('body').append(toast);
+    if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+        new bootstrap.Toast(toast[0], { delay: 3000 }).show();
+    } else {
+        toast.fadeIn(300).delay(3000).fadeOut(300, function() { $(this).remove(); });
+    }
+    setTimeout(function() { toast.remove(); }, 3500);
+}
+</script>
+{% endblock %}

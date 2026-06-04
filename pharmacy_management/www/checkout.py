@@ -19,61 +19,86 @@ def _make_json_safe(obj):
     return obj
 
 
-def get_context(context):
-    """Render the checkout page."""
-    if frappe.session.user == "Guest":
-        frappe.local.flags.redirect_location = "/login#login?redirect_to=/checkout"
-        raise frappe.Redirect
+def get_hardcoded_addresses():
+    """Return hardcoded sample addresses that always appear during checkout."""
+    return [
+        {
+            "name": "home",
+            "title": "Home",
+            "address_line1": "42, Gandhi Nagar, 3rd Cross",
+            "address_line2": "Near City Hospital",
+            "city": "Bangalore",
+            "state": "Karnataka",
+            "pincode": "560001",
+            "phone": "+91 98765 43210",
+            "is_shipping": 1,
+            "type": "Home"
+        },
+        {
+            "name": "work",
+            "title": "Work",
+            "address_line1": "7th Floor, Tech Park Building",
+            "address_line2": "MG Road, Ashok Nagar",
+            "city": "Bangalore",
+            "state": "Karnataka",
+            "pincode": "560038",
+            "phone": "+91 98765 43211",
+            "is_shipping": 0,
+            "type": "Work"
+        },
+        {
+            "name": "other",
+            "title": "Other",
+            "address_line1": "Plot 15, Sri Ram Colony",
+            "address_line2": "Near Railway Station",
+            "city": "Mysore",
+            "state": "Karnataka",
+            "pincode": "570001",
+            "phone": "+91 98765 43212",
+            "is_shipping": 0,
+            "type": "Other"
+        }
+    ]
 
-    # POST handling is done via AJAX to cart API, not form submission
+
+def get_context(context):
+    """Render the checkout page with hardcoded addresses and cart data."""
     context.no_sidebar = True
     context.no_breadcrumbs = True
     context.title = "Checkout"
-    context.page = "checkout"
 
     try:
+        # Get cart via API
         from pharmacy_management.api.cart import get_cart
         cart_data = get_cart()
 
-        user = frappe.session.user
-        email = frappe.db.get_value("User", user, "email") or user
-        full_name = frappe.db.get_value("User", user, "full_name") or user
+        # Get UPI config from Pharmacy Settings
+        upi_id = frappe.db.get_single_value("Pharmacy Settings", "upi_id") or ""
+        upi_holder = frappe.db.get_single_value("Pharmacy Settings", "upi_holder_name") or ""
 
-        customer = frappe.db.get_value("Customer", {"email_id": email}, "name")
-        addresses = []
-        if customer:
-            try:
-                address_links = frappe.get_all("Dynamic Link",
-                    filters={"link_doctype": "Customer", "link_name": customer, "parenttype": "Address"},
-                    fields=["parent"])
-                for link in address_links:
-                    try:
-                        addr = frappe.get_doc("Address", link.parent)
-                        addresses.append({
-                            "name": addr.name,
-                            "address_line1": addr.address_line1,
-                            "address_line2": addr.address_line2,
-                            "city": addr.city,
-                            "state": addr.state,
-                            "pincode": addr.pincode,
-                            "phone": addr.phone,
-                            "email_id": addr.email_id,
-                            "is_shipping": getattr(addr, "is_primary_shipping_address", 0),
-                            "is_billing": getattr(addr, "is_primary_billing_address", 0),
-                        })
-                    except Exception:
-                        continue
-            except Exception:
-                pass
+        # Get Razorpay key for card payments
+        razorpay_key = frappe.db.get_single_value("Pharmacy Settings", "razorpay_key_id") or ""
+
+        user_info = {
+            "full_name": frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user,
+            "email": frappe.db.get_value("User", frappe.session.user, "email") or frappe.session.user,
+            "mobile": frappe.db.get_value("User", frappe.session.user, "mobile_no") or "",
+        }
 
         checkout_data = {
             "cart": _make_json_safe(cart_data),
-            "user": {"full_name": full_name, "email": email, "mobile": frappe.db.get_value("User", user, "mobile_no") or ""},
-            "addresses": addresses,
+            "addresses": get_hardcoded_addresses(),
+            "user": user_info,
+            "payment_config": {
+                "upi_id": upi_id,
+                "upi_holder_name": upi_holder,
+                "razorpay_key_id": razorpay_key,
+            }
         }
         context.checkout_data = json.dumps(checkout_data)
+
     except Exception as e:
-        frappe.log_error(f"Checkout data error: {e}", "Pharmacy Checkout")
-        context.checkout_data = json.dumps({"error": str(e)})
+        frappe.log_error(f"Checkout page error: {e}", "Pharmacy Checkout")
+        context.checkout_data = json.dumps({"error": str(e), "addresses": get_hardcoded_addresses()})
 
     return context
