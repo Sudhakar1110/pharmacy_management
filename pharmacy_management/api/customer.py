@@ -258,10 +258,6 @@ def save_address(address_line1, city, state, pincode, country="India", address_l
                         and _norm(existing_addr.city) == _norm(city)
                         and _norm(existing_addr.state) == _norm(state)
                         and _norm(existing_addr.pincode) == _norm(pincode)):
-                if (norm(existing_addr.address_line1) == norm(address_line1)
-                        and norm(existing_addr.city) == norm(city)
-                        and norm(existing_addr.state) == norm(state)
-                        and norm(existing_addr.pincode) == norm(pincode)):
                     # Update existing matching address
                     existing_addr.address_line2 = address_line2 or existing_addr.address_line2
                     existing_addr.country = country or existing_addr.country

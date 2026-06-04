@@ -9,7 +9,6 @@
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="/cart" class="text-decoration-none"><i class="bi bi-cart3"></i> Cart</a></li>
                 <li class="breadcrumb-item active" aria-current="page">Checkout</li>
-                <li class="breadcrumb-item text-muted">Payment</li>
                 <li class="breadcrumb-item text-muted">Confirmation</li>
             </ol>
         </nav>
@@ -21,11 +20,7 @@
                     <i class="bi bi-credit-card text-primary"></i> Checkout
                 </h2>
 
-                <form id="checkoutForm" method="POST" action="/payment">
-                    <input type="hidden" name="address_name" id="hiddenAddress" value="">
-                    <input type="hidden" name="payment_method" id="hiddenPayment" value="COD">
-                    <input type="hidden" name="order_notes" id="hiddenNotes" value="">
-
+                <form id="checkoutForm" novalidate>
                     <!-- ====== Step 1: Delivery Address ====== -->
                     <div class="card border-0 shadow-sm mb-4">
                         <div class="card-body p-4">
@@ -33,8 +28,34 @@
                                 <span class="badge bg-primary rounded-circle me-2" style="width: 28px; height: 28px; line-height: 20px; font-size: 14px;">1</span>
                                 <h5 class="fw-bold mb-0">Delivery Address</h5>
                             </div>
-                            <div id="addressSection" class="row g-3">
-                                <!-- Populated by JS -->
+
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Address Line 1 <span class="text-danger">*</span></label>
+                                    <input type="text" id="addrLine1" class="form-control" required
+                                           placeholder="House / Flat / Door No., Street / Locality">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Address Line 2</label>
+                                    <input type="text" id="addrLine2" class="form-control"
+                                           placeholder="Landmark, Area (optional)">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">City <span class="text-danger">*</span></label>
+                                    <input type="text" id="addrCity" class="form-control" required placeholder="e.g. Bangalore">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">State <span class="text-danger">*</span></label>
+                                    <input type="text" id="addrState" class="form-control" required placeholder="e.g. Karnataka">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Pincode <span class="text-danger">*</span></label>
+                                    <input type="text" id="addrPincode" class="form-control" required placeholder="6-digit pincode" pattern="[0-9]{6}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Phone Number</label>
+                                    <input type="text" id="addrPhone" class="form-control" placeholder="10-digit mobile number" pattern="[0-9]{10}">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -52,7 +73,7 @@
                         </div>
                     </div>
 
-                    <!-- ====== Order Notes ====== -->
+                    <!-- ====== Step 3: Order Notes ====== -->
                     <div class="card border-0 shadow-sm mb-4">
                         <div class="card-body p-4">
                             <div class="d-flex align-items-center mb-3">
@@ -64,7 +85,7 @@
                         </div>
                     </div>
 
-                    <!-- ====== Submit Button ====== -->
+                    <!-- ====== Place Order Button ====== -->
                     <button type="submit" class="btn btn-success btn-lg w-100" id="placeOrderBtn">
                         <i class="bi bi-shield-check"></i> Place Order — <span id="totalDisplay">₹0.00</span>
                     </button>
@@ -118,52 +139,28 @@
     </div>
 </div>
 
-<!-- Add Address Modal -->
-<div class="modal fade" id="addAddressModal" tabindex="-1">
-    <div class="modal-dialog">
+<!-- ====== UPI Payment Modal ====== -->
+<div class="modal fade" id="upiModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Add New Address</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-phone"></i> Pay via UPI</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="cancelPayment()"></button>
             </div>
-            <div class="modal-body">
-                <form id="addressForm">
-                    <div class="mb-3">
-                        <label class="form-label">Address Title</label>
-                        <input type="text" id="addrTitle" class="form-control" placeholder="e.g. Home, Office">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Address Line 1 *</label>
-                        <input type="text" id="addrLine1" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Address Line 2</label>
-                        <input type="text" id="addrLine2" class="form-control">
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-6">
-                            <label class="form-label">City *</label>
-                            <input type="text" id="addrCity" class="form-control" required>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label">State *</label>
-                            <input type="text" id="addrState" class="form-control" required>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Pincode *</label>
-                        <input type="text" id="addrPincode" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Phone</label>
-                        <input type="text" id="addrPhone" class="form-control">
-                    </div>
-                </form>
+            <div class="modal-body text-center py-4" id="upiModalBody">
+                <!-- Filled by JS -->
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveCustomAddress()">Save Address</button>
-            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== Success Overlay (shown briefly before redirect) ====== -->
+<div class="modal fade" id="successModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content text-center py-5">
+            <i class="bi bi-check-circle-fill text-success display-3 mb-3"></i>
+            <h5 class="fw-bold" id="successModalMsg">Order Placed Successfully!</h5>
+            <p class="text-muted small mb-0">Redirecting to order details...</p>
         </div>
     </div>
 </div>
@@ -176,23 +173,16 @@
 // ============================================================
 
 var checkoutData = null;
-var selectedAddress = null;
 var selectedPayment = 'COD';
 var cartGrandTotal = 0;
-
-// Hardcoded fallback addresses (used if server data fails)
-var fallbackAddresses = [
-    { name: 'home', title: 'Home', address_line1: '42, Gandhi Nagar, 3rd Cross', address_line2: 'Near City Hospital', city: 'Bangalore', state: 'Karnataka', pincode: '560001', phone: '+91 98765 43210', is_shipping: 1, type: 'Home' },
-    { name: 'work', title: 'Work', address_line1: '7th Floor, Tech Park Building', address_line2: 'MG Road, Ashok Nagar', city: 'Bangalore', state: 'Karnataka', pincode: '560038', phone: '+91 98765 43211', is_shipping: 0, type: 'Work' },
-    { name: 'other', title: 'Other', address_line1: 'Plot 15, Sri Ram Colony', address_line2: 'Near Railway Station', city: 'Mysore', state: 'Karnataka', pincode: '570001', phone: '+91 98765 43212', is_shipping: 0, type: 'Other' }
-];
+var orderId = null;
 
 $(document).ready(function() {
     loadCheckoutData();
 });
 
 function loadCheckoutData() {
-    // Try server-side JSON first (embedded in page)
+    // Try server-side embedded JSON
     try {
         var embeddedData = {{ checkout_data|safe }};
         if (embeddedData && embeddedData.cart && embeddedData.cart.items) {
@@ -204,24 +194,20 @@ function loadCheckoutData() {
 
     // Fallback: fetch via API
     $.get('/api/method/pharmacy_management.api.cart.get_checkout_summary', function(res) {
-        if (res.message) {
+        if (res.message && res.message.cart && res.message.cart.items) {
             checkoutData = res.message;
-            checkoutData.addresses = checkoutData.addresses || fallbackAddresses;
+            checkoutData.addresses = [];
             renderPage(checkoutData);
         } else {
-            renderPage({ cart: { is_empty: true }, addresses: fallbackAddresses });
+            renderPage({ cart: { is_empty: true } });
         }
-    })    }).fail(function() {
-        // Use fallback addresses and try to get cart
+    }).fail(function() {
+        // Try just getting the cart
         $.get('/api/method/pharmacy_management.api.cart.get_cart', function(res) {
-            checkoutData = {
-                cart: res.message,
-                addresses: fallbackAddresses,
-                payment_config: {}
-            };
+            checkoutData = { cart: res.message, payment_config: {} };
             renderPage(checkoutData);
         }).fail(function() {
-            renderPage({ cart: { is_empty: true }, addresses: fallbackAddresses });
+            renderPage({ cart: { is_empty: true } });
         });
     });
 }
@@ -234,79 +220,21 @@ function renderPage(data) {
 
     var cart = data.cart;
     if (!cart || cart.is_empty || !cart.items || cart.items.length === 0) {
-        $('#checkoutSummary').html(`
-            <div class="text-center py-4">
-                <i class="bi bi-cart-x display-5 text-muted"></i>
-                <p class="text-muted mt-2">Your cart is empty</p>
-                <a href="/shop" class="btn btn-primary btn-sm">Shop Now</a>
-            </div>
-        `);
+        $('#checkoutSummary').html([
+            '<div class="text-center py-4">',
+            '<i class="bi bi-cart-x display-5 text-muted"></i>',
+            '<p class="text-muted mt-2">Your cart is empty</p>',
+            '<a href="/shop" class="btn btn-primary btn-sm">Shop Now</a>',
+            '</div>'
+        ].join(''));
         $('#placeOrderBtn').prop('disabled', true);
         return;
     }
 
-    renderAddresses(data.addresses || []);
     renderPaymentMethods();
     renderOrderSummary(cart);
     cartGrandTotal = parseFloat(cart.grand_total || 0);
     updateTotalDisplay(cart);
-}
-
-function renderAddresses(addresses) {
-    var html = '';
-    addresses.forEach(function(addr, index) {
-        var isChecked = index === 0 ? 'checked' : '';
-        var label = addr.title || addr.type || 'Address';
-        var icon = 'bi-geo-alt';
-        if (label.toLowerCase() === 'home') icon = 'bi-house-door';
-        else if (label.toLowerCase() === 'work') icon = 'bi-briefcase';
-
-        html += `
-            <div class="col-md-6">
-                <div class="address-card border rounded-3 p-3 ${isChecked ? 'border-primary bg-primary-subtle' : ''}"
-                     onclick="selectAddress('${addr.name}', this)">
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="address" value="${addr.name}" ${isChecked}>
-                        <label class="form-check-label fw-semibold">
-                            <i class="bi ${icon} me-1"></i> ${escapeHtml(label)}
-                        </label>
-                    </div>
-                    <div class="mt-2 ps-3 small text-muted">
-                        <p class="mb-1">${escapeHtml(addr.address_line1)}</p>
-                        ${addr.address_line2 ? `<p class="mb-1">${escapeHtml(addr.address_line2)}</p>` : ''}
-                        <p class="mb-1">${escapeHtml(addr.city)}, ${escapeHtml(addr.state)} - ${escapeHtml(addr.pincode)}</p>
-                        ${addr.phone ? `<p class="mb-0"><i class="bi bi-telephone"></i> ${escapeHtml(addr.phone)}</p>` : ''}
-                    </div>
-                </div>
-            </div>
-        `;
-        if (isChecked) selectedAddress = addr.name;
-    });
-
-    // Add button to add new address
-    html += `
-        <div class="col-md-6">
-            <div class="border rounded-3 p-3 text-center h-100 d-flex align-items-center justify-content-center"
-                 style="border-style: dashed !important; cursor: pointer;"
-                 data-bs-toggle="modal" data-bs-target="#addAddressModal">
-                <div>
-                    <i class="bi bi-plus-circle display-6 text-muted"></i>
-                    <p class="text-muted mt-1 mb-0 small">Add New Address</p>
-                </div>
-            </div>
-        </div>
-    `;
-
-    $('#addressSection').html(html);
-    $('#hiddenAddress').val(selectedAddress);
-}
-
-function selectAddress(name, el) {
-    selectedAddress = name;
-    $('.address-card').removeClass('border-primary bg-primary-subtle');
-    $(el).addClass('border-primary bg-primary-subtle');
-    $(el).find('.form-check-input').prop('checked', true);
-    $('#hiddenAddress').val(name);
 }
 
 function renderPaymentMethods() {
@@ -317,28 +245,25 @@ function renderPaymentMethods() {
     ];
 
     var html = '';
-    methods.forEach(function(m, index) {
-        var isChecked = index === 0 ? 'checked' : '';
-        if (isChecked) selectedPayment = m.id;
-
-        html += `
-            <div class="col-md-6 col-lg-4">
-                <div class="payment-card border rounded-3 p-3 text-center ${isChecked ? 'border-primary bg-primary-subtle' : ''}"
-                     onclick="selectPayment('${m.id}', this)">
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="radio" name="payment" value="${m.id}" ${isChecked}>
-                    </div>
-                    <i class="bi ${m.icon} fs-2 text-primary mb-2 d-block"></i>
-                    <h6 class="fw-bold mb-1">${m.name}</h6>
-                    <small class="text-muted d-block mb-2">${m.desc}</small>
-                    <span class="badge bg-success-subtle text-success">${m.badge}</span>
-                </div>
-            </div>
-        `;
+    methods.forEach(function(m, idx) {
+        var checked = idx === 0 ? 'checked' : '';
+        if (idx === 0) selectedPayment = m.id;
+        html += [
+            '<div class="col-md-6 col-lg-4">',
+            '<div class="payment-card border rounded-3 p-3 text-center ' + (checked ? 'border-primary bg-primary-subtle' : '') + '"',
+            'onclick="selectPayment(\'' + m.id + '\', this)">',
+            '<div class="form-check mb-2">',
+            '<input class="form-check-input" type="radio" name="payment" value="' + m.id + '" ' + checked + '>',
+            '</div>',
+            '<i class="bi ' + m.icon + ' fs-2 text-primary mb-2 d-block"></i>',
+            '<h6 class="fw-bold mb-1">' + m.name + '</h6>',
+            '<small class="text-muted d-block mb-2">' + m.desc + '</small>',
+            '<span class="badge bg-success-subtle text-success">' + m.badge + '</span>',
+            '</div></div>'
+        ].join('');
     });
 
     $('#paymentSection').html(html);
-    $('#hiddenPayment').val(selectedPayment);
 }
 
 function selectPayment(method, el) {
@@ -346,50 +271,55 @@ function selectPayment(method, el) {
     $('.payment-card').removeClass('border-primary bg-primary-subtle');
     $(el).addClass('border-primary bg-primary-subtle');
     $(el).find('.form-check-input').prop('checked', true);
-    $('#hiddenPayment').val(method);
 }
 
 function renderOrderSummary(cart) {
     var itemsHtml = '';
     cart.items.slice(0, 3).forEach(function(item) {
-        itemsHtml += `
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <div class="d-flex align-items-center">
-                    <img src="${item.image || '/assets/pharmacy_management/images/medicine-placeholder.svg'}"
-                         style="width: 36px; height: 36px; object-fit: contain; border-radius: 4px;"
-                         alt="${item.medicine_name}"
-                         onerror="this.style.display='none'">
-                    <div class="ms-2">
-                        <small class="d-block fw-semibold" style="line-height: 1.2;">${escapeHtml(item.medicine_name)}</small>
-                        <small class="text-muted">x${item.qty}</small>
-                    </div>
-                </div>
-                <small class="fw-semibold">₹${parseFloat(item.amount).toFixed(2)}</small>
-            </div>
-        `;
+        itemsHtml += [
+            '<div class="d-flex justify-content-between align-items-center mb-2">',
+            '<div class="d-flex align-items-center">',
+            '<img src="' + (item.image || '/assets/pharmacy_management/images/medicine-placeholder.svg') + '"',
+            'style="width: 36px; height: 36px; object-fit: contain; border-radius: 4px;"',
+            'alt="' + escapeHtml(item.medicine_name) + '"',
+            'onerror="this.style.display=\'none\'">',
+            '<div class="ms-2">',
+            '<small class="d-block fw-semibold" style="line-height: 1.2;">' + escapeHtml(item.medicine_name) + '</small>',
+            '<small class="text-muted">x' + item.qty + '</small>',
+            '</div></div>',
+            '<small class="fw-semibold">₹' + parseFloat(item.amount).toFixed(2) + '</small>',
+            '</div>'
+        ].join('');
     });
     if (cart.items.length > 3) {
-        itemsHtml += `<small class="text-muted d-block text-center">+${cart.items.length - 3} more item(s)</small>`;
+        itemsHtml += '<small class="text-muted d-block text-center">+' + (cart.items.length - 3) + ' more item(s)</small>';
     }
 
-    var summaryHtml = `
-        <div class="mb-3">${itemsHtml}</div>
-        <hr class="my-2">
-        <div class="d-flex justify-content-between mb-1">
-            <small>Subtotal</small>
-            <small class="fw-semibold">₹${parseFloat(cart.subtotal).toFixed(2)}</small>
-        </div>
-        ${cart.coupon_discount > 0 ? `
-        <div class="d-flex justify-content-between mb-1 text-success">
-            <small>Coupon Discount</small>
-            <small class="fw-semibold">-₹${parseFloat(cart.coupon_discount).toFixed(2)}</small>
-        </div>` : ''}
-        <div class="d-flex justify-content-between mb-1">
-            <small>Shipping</small>
-            <small class="fw-semibold">${cart.shipping === 0 ? '<span class="text-success">FREE</span>' : '₹' + parseFloat(cart.shipping).toFixed(2)}</small>
-        </div>
-        ${cart.shipping > 0 ? `<small class="text-muted d-block mb-1">Add ₹${(cart.free_shipping_threshold - cart.subtotal).toFixed(2)} more for free shipping</small>` : ''}
-    `;
+    var summaryHtml = [
+        '<div class="mb-3">' + itemsHtml + '</div>',
+        '<hr class="my-2">',
+        '<div class="d-flex justify-content-between mb-1">',
+        '<small>Subtotal</small>',
+        '<small class="fw-semibold">₹' + parseFloat(cart.subtotal).toFixed(2) + '</small>',
+        '</div>'
+    ].join('');
+
+    if (cart.coupon_discount > 0) {
+        summaryHtml += [
+            '<div class="d-flex justify-content-between mb-1 text-success">',
+            '<small>Coupon Discount</small>',
+            '<small class="fw-semibold">-₹' + parseFloat(cart.coupon_discount).toFixed(2) + '</small>',
+            '</div>'
+        ].join('');
+    }
+
+    summaryHtml += [
+        '<div class="d-flex justify-content-between mb-1">',
+        '<small>Shipping</small>',
+        '<small class="fw-semibold">' + (cart.shipping === 0 ? '<span class="text-success">FREE</span>' : '₹' + parseFloat(cart.shipping).toFixed(2)) + '</small>',
+        '</div>',
+        (cart.shipping > 0 ? '<small class="text-muted d-block mb-1">Add ₹' + (cart.free_shipping_threshold - cart.subtotal).toFixed(2) + ' more for free shipping</small>' : '')
+    ].join('');
 
     $('#checkoutSummary').html(summaryHtml);
 }
@@ -400,77 +330,99 @@ function updateTotalDisplay(cart) {
     $('#sidebarTotal').text('₹' + total);
 }
 
-function saveCustomAddress() {
-    var addr = {
-        address_line1: $('#addrLine1').val(),
-        address_line2: $('#addrLine2').val(),
-        city: $('#addrCity').val(),
-        state: $('#addrState').val(),
-        pincode: $('#addrPincode').val(),
-        phone: $('#addrPhone').val(),
-        title: $('#addrTitle').val() || 'Custom'
-    };
+// ====================================================================
+// FORM SUBMIT - Main order placement logic
+// ====================================================================
+$('#checkoutForm').on('submit', function(e) {
+    e.preventDefault();
 
-    if (!addr.address_line1 || !addr.city || !addr.state || !addr.pincode) {
-        showToast('Please fill in all required fields', 'warning');
+    // Validate address
+    var addr = getAddressData();
+    if (!addr) return;
+
+    // Validate cart
+    if (!checkoutData || !checkoutData.cart || checkoutData.cart.is_empty) {
+        showToast('Your cart is empty', 'warning');
         return;
     }
 
-    // Save via API then reload
+    var btn = $('#placeOrderBtn');
+    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Placing Order...');
+
+    // Step 1: Save the address via API
+    saveAddressAndPlaceOrder(addr, btn);
+});
+
+function getAddressData() {
+    var addr = {
+        address_line1: $('#addrLine1').val().trim(),
+        address_line2: $('#addrLine2').val().trim(),
+        city: $('#addrCity').val().trim(),
+        state: $('#addrState').val().trim(),
+        pincode: $('#addrPincode').val().trim(),
+        phone: $('#addrPhone').val().trim(),
+        is_shipping: 1
+    };
+
+    if (!addr.address_line1 || !addr.city || !addr.state || !addr.pincode) {
+        showToast('Please fill in all required address fields', 'warning');
+        return null;
+    }
+    if (addr.pincode.length !== 6 || !/^\d+$/.test(addr.pincode)) {
+        showToast('Please enter a valid 6-digit pincode', 'warning');
+        return null;
+    }
+    return addr;
+}
+
+function saveAddressAndPlaceOrder(addr, btn) {
     $.ajax({
         url: '/api/method/pharmacy_management.api.customer.save_address',
         type: 'POST',
         data: addr,
-        headers: { 'X-Frappe-CSRF-Token': frappe.csrf_token },        success: function(res) {
-            if (res.message && res.message.success) {
-                $('#addAddressModal').modal('hide');
-                $('#addressForm')[0].reset();
-                showToast('Address added successfully!', 'success');
-                // Refresh address list from server without full reload
-                setTimeout(function() { location.reload(); }, 800);
+        headers: { 'X-Frappe-CSRF-Token': frappe.csrf_token },
+        success: function(res) {                if (res.message && res.message.success) {
+                    // Address saved, now place the order
+                    var addressName = res.message.address_id;
+                    placeOrder(addressName, btn);
             } else {
+                btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
                 showToast(res.message?.message || 'Failed to save address', 'danger');
             }
         },
         error: function(xhr) {
-            showToast(xhr.responseJSON?.message || 'Error saving address', 'danger');
+            btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
+            var msg = 'Failed to save address. Please try again.';
+            try { msg = xhr.responseJSON?.message || msg; } catch(e) {}
+            showToast(msg, 'danger');
         }
     });
 }
 
-// Form submit: validate and redirect to payment
-$('#checkoutForm').on('submit', function(e) {
-    e.preventDefault();
+function placeOrder(addressName, btn) {
+    var notes = $('#orderNotes').val().trim();
 
-    if (!selectedAddress) {
-        showToast('Please select a delivery address', 'warning');
-        return;
-    }
-
-    $('#hiddenNotes').val($('#orderNotes').val());
-
-    var btn = $('#placeOrderBtn');
-    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Processing...');
-
-    // Place the order via API
     frappe.call({
         method: 'pharmacy_management.api.cart.place_order',
         args: {
-            address_name: selectedAddress,
+            address_name: addressName,
             payment_method: selectedPayment,
-            notes: $('#orderNotes').val()
+            notes: notes
         },
         callback: function(res) {
             var result = res.message;
             if (result && result.success) {
-                var orderId = result.order_id;
+                orderId = result.order_id;
 
                 if (selectedPayment === 'COD') {
                     // COD: redirect straight to confirmation
-                    window.location.href = '/order-confirmation?order_id=' + encodeURIComponent(orderId);
+                    showSuccessModal('Order Placed!', '/order-confirmation?order_id=' + encodeURIComponent(orderId));
+                } else if (selectedPayment === 'UPI') {
+                    // UPI: show QR code modal
+                    showUpiModal(result);
                 } else {
-                    // UPI or Card: redirect to payment page
-                    window.location.href = '/payment?order_id=' + encodeURIComponent(orderId) + '&method=' + selectedPayment;
+                    // CARD: initiate Razorpay (or test mode)
+                    initiateCardPayment(orderId, btn);
                 }
             } else {
                 btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
@@ -480,35 +432,231 @@ $('#checkoutForm').on('submit', function(e) {
         },
         error: function(xhr) {
             btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
-            var msg = 'Failed to place order. Please try again.';
-            try {
-                if (xhr && xhr.responseJSON) {
-                    if (xhr.responseJSON.message) msg = xhr.responseJSON.message;
-                    else if (xhr.responseJSON._server_messages) {
-                        var raw = xhr.responseJSON._server_messages;
-                        var msgs = typeof raw === 'string' ? JSON.parse(raw) : raw;
-                        if (msgs && msgs.length) {
-                            var first = typeof msgs[0] === 'string' ? JSON.parse(msgs[0]) : msgs[0];
-                            msg = first.message || first.title || msg;
-                        }
-                    }
-                }
-            } catch(e) {}
+            var msg = parseApiError(xhr);
             showToast(msg, 'danger');
         }
     });
-});
+}
+
+// ====================================================================
+// UPI PAYMENT MODAL
+// ====================================================================
+function showUpiModal(result) {
+    var upiId = result.upi_id || '';
+    var upiHolder = result.upi_holder_name || '';
+    var amount = parseFloat(result.grand_total || cartGrandTotal);
+    var oid = result.order_id;
+
+    var upiLink = 'upi://pay?' +
+        'pa=' + encodeURIComponent(upiId || 'example@upi') +
+        '&pn=' + encodeURIComponent(upiHolder || 'Pharmacy') +
+        '&am=' + encodeURIComponent(amount) +
+        '&cu=INR&tr=' + encodeURIComponent(oid);
+
+    var qrUrl = 'https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=' + encodeURIComponent(upiLink);
+
+    var bodyHtml = '';
+    if (upiId) {
+        bodyHtml = [
+            '<div class="mb-3">',
+            '<img src="' + qrUrl + '" alt="UPI QR" style="width: 200px; height: 200px;" class="img-fluid border rounded" loading="lazy">',
+            '<p class="text-muted small mt-2"><i class="bi bi-phone"></i> Scan with GPay, PhonePe, or Paytm</p>',
+            '</div>',
+            '<div class="bg-light rounded-3 p-3 mb-3 text-start">',
+            '<div class="d-flex justify-content-between"><span class="text-muted">Amount:</span><span class="fw-bold fs-5 text-success">₹' + amount.toFixed(2) + '</span></div>',
+            '<hr class="my-2">',
+            '<p class="mb-0 small"><strong>UPI ID:</strong> <span class="font-monospace">' + escapeHtml(upiId) + '</span></p>',
+            (upiHolder ? '<p class="mb-0 small text-muted">Account: ' + escapeHtml(upiHolder) + '</p>' : ''),
+            '<p class="mb-0 small text-muted">Order: ' + oid + '</p>',
+            '</div>',
+            '<div class="d-grid gap-2">',
+            '<button class="btn btn-success" onclick="confirmUpiPayment(\'' + oid + '\')" id="confirmUpiBtn">',
+            '<i class="bi bi-check-circle"></i> I\'ve Paid — Confirm Order</button>',
+            '<button class="btn btn-outline-secondary" onclick="cancelPayment()">Cancel</button>',
+            '</div>',
+            '<div id="upiConfirmSpinner" class="d-none text-center mt-2">',
+            '<div class="spinner-border spinner-border-sm text-success"></div> <small class="text-muted">Confirming...</small>',
+            '</div>'
+        ].join('');
+    } else {
+        bodyHtml = [
+            '<div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> UPI not configured.</div>',
+            '<p>Please contact the pharmacy to complete your payment.</p>',
+            '<a href="/my-orders" class="btn btn-primary"><i class="bi bi-box"></i> View Orders</a>'
+        ].join('');
+    }
+
+    $('#upiModalBody').html(bodyHtml);
+    var upiModal = new bootstrap.Modal(document.getElementById('upiModal'));
+    upiModal.show();
+}
+
+function confirmUpiPayment(oid) {
+    $('#confirmUpiBtn').prop('disabled', true);
+    $('#upiConfirmSpinner').removeClass('d-none');
+
+    frappe.call({
+        method: 'pharmacy_management.api.cart.confirm_upi_payment',
+        args: { order_id: oid },
+        callback: function(res) {
+            var data = res.message;
+            if (data && data.success) {
+                $('#upiModal').modal('hide');
+                showSuccessModal('Payment Confirmed!', '/order-confirmation?order_id=' + encodeURIComponent(oid));
+            } else {
+                $('#confirmUpiBtn').prop('disabled', false);
+                $('#upiConfirmSpinner').addClass('d-none');
+                showToast(data && data.message ? data.message : 'Failed to confirm payment', 'danger');
+            }
+        },
+        error: function() {
+            $('#confirmUpiBtn').prop('disabled', false);
+            $('#upiConfirmSpinner').addClass('d-none');
+            showToast('Failed to confirm payment. Please try again.', 'danger');
+        }
+    });
+}
+
+// ====================================================================
+// CARD / RAZORPAY PAYMENT
+// ====================================================================
+function initiateCardPayment(oid, btn) {
+    $.get('/api/method/pharmacy_management.api.cart.razorpay_pay', { order_id: oid }, function(res) {
+        var data = res.message;
+        if (!data || !data.success) {
+            btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
+            showToast(data && data.message ? data.message : 'Failed to initiate payment', 'danger');
+            return;
+        }
+
+        // Test mode - no Razorpay keys configured
+        if (data.test_mode) {
+            frappe.call({
+                method: 'pharmacy_management.api.cart.razorpay_verify',
+                args: {
+                    order_id: oid,
+                    razorpay_payment_id: 'test_payment',
+                    razorpay_order_id: 'test_order',
+                    razorpay_signature: 'test_signature'
+                },
+                callback: function(verifyRes) {
+                    var vdata = verifyRes.message;
+                    if (vdata && vdata.success) {
+                        showSuccessModal('Payment Successful!', '/order-confirmation?order_id=' + encodeURIComponent(oid));
+                    } else {
+                        btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
+                        showToast(vdata && vdata.message ? vdata.message : 'Payment verification failed', 'danger');
+                    }
+                },
+                error: function() {
+                    btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
+                    showToast('Payment verification failed. Please contact support.', 'danger');
+                }
+            });
+            return;
+        }
+
+        // Real Razorpay checkout
+        var options = {
+            key: data.key_id,
+            amount: data.amount,
+            currency: data.currency || 'INR',
+            name: 'Pharmacy Management',
+            description: 'Order ' + oid,
+            order_id: data.razorpay_order_id,
+            prefill: data.prefill || {},
+            theme: data.theme || { color: '#2563eb' },
+            handler: function(response) {
+                frappe.call({
+                    method: 'pharmacy_management.api.cart.razorpay_verify',
+                    args: {
+                        order_id: oid,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_signature: response.razorpay_signature
+                    },
+                    callback: function(verifyRes) {
+                        var vdata = verifyRes.message;
+                        if (vdata && vdata.success) {
+                            showSuccessModal('Payment Successful!', '/order-confirmation?order_id=' + encodeURIComponent(oid));
+                        } else {
+                            btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
+                            showToast(vdata && vdata.message ? vdata.message : 'Payment verification failed', 'danger');
+                        }
+                    },
+                    error: function() {
+                        btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
+                        showToast('Payment verification failed. Please contact support.', 'danger');
+                    }
+                });
+            },
+            modal: {
+                ondismiss: function() {
+                    btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
+                    showToast('Payment cancelled. You can pay later from your orders page.', 'info');
+                }
+            }
+        };
+        var rzp = new Razorpay(options);
+        rzp.open();
+    }).fail(function(xhr) {
+        btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order — ₹' + cartGrandTotal.toFixed(2));
+        showToast(parseApiError(xhr) || 'Failed to initiate payment', 'danger');
+    });
+}
+
+// ====================================================================
+// SUCCESS MODAL - shown before redirect
+// ====================================================================
+function showSuccessModal(msg, redirectUrl) {
+    $('#successModalMsg').text(msg);
+    var modal = new bootstrap.Modal(document.getElementById('successModal'));
+    modal.show();
+    setTimeout(function() {
+        window.location.href = redirectUrl;
+    }, 1500);
+}
+
+function cancelPayment() {
+    if (orderId) {
+        window.location.href = '/order-confirmation?order_id=' + encodeURIComponent(orderId);
+    } else {
+        window.location.href = '/my-orders';
+    }
+}
+
+// ====================================================================
+// ERROR HANDLING
+// ====================================================================
+function parseApiError(xhr) {
+    var msg = 'Something went wrong. Please try again.';
+    try {
+        if (xhr && xhr.responseJSON) {
+            if (xhr.responseJSON.message) {
+                msg = typeof xhr.responseJSON.message === 'string' ? xhr.responseJSON.message : msg;
+            } else if (xhr.responseJSON._server_messages) {
+                var raw = xhr.responseJSON._server_messages;
+                var msgs = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                if (msgs && msgs.length) {
+                    var first = typeof msgs[0] === 'string' ? JSON.parse(msgs[0]) : msgs[0];
+                    msg = first.message || first.title || msg;
+                }
+            }
+        }
+    } catch(e) {}
+    return msg;
+}
 
 function showErrorOnPage(msg) {
-    var html = `
-        <div class="text-center py-5">
-            <i class="bi bi-exclamation-triangle display-3 text-warning"></i>
-            <h4 class="mt-3">Could not load checkout</h4>
-            <p class="text-muted">${escapeHtml(msg)}</p>
-            <a href="/checkout" class="btn btn-primary"><i class="bi bi-arrow-clockwise"></i> Retry</a>
-            <a href="/cart" class="btn btn-outline-secondary ms-2"><i class="bi bi-cart"></i> Back to Cart</a>
-        </div>
-    `;
+    var html = [
+        '<div class="text-center py-5">',
+        '<i class="bi bi-exclamation-triangle display-3 text-warning"></i>',
+        '<h4 class="mt-3">Could not load checkout</h4>',
+        '<p class="text-muted">' + escapeHtml(msg) + '</p>',
+        '<a href="/checkout" class="btn btn-primary"><i class="bi bi-arrow-clockwise"></i> Retry</a>',
+        '<a href="/cart" class="btn btn-outline-secondary ms-2"><i class="bi bi-cart"></i> Back to Cart</a>',
+        '</div>'
+    ].join('');
     $('.checkout-page .container .row').html(html);
 }
 
@@ -521,14 +669,13 @@ function escapeHtml(str) {
 
 function showToast(message, type) {
     var iconMap = { success: 'bi-check-circle-fill', danger: 'bi-exclamation-circle-fill', warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill' };
-    var toast = $(`
-        <div class="toast align-items-center text-bg-${type} border-0 position-fixed bottom-0 end-0 m-3" role="alert">
-            <div class="d-flex">
-                <div class="toast-body"><i class="bi ${iconMap[type] || 'bi-info-circle-fill'} me-2"></i>${message}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        </div>
-    `);
+    var toast = $([
+        '<div class="toast align-items-center text-bg-' + type + ' border-0 position-fixed bottom-0 end-0 m-3" role="alert">',
+        '<div class="d-flex">',
+        '<div class="toast-body"><i class="bi ' + (iconMap[type] || 'bi-info-circle-fill') + ' me-2"></i>' + message + '</div>',
+        '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>',
+        '</div></div>'
+    ].join(''));
     $('body').append(toast);
     if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
         new bootstrap.Toast(toast[0], { delay: 3000 }).show();
