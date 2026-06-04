@@ -2,7 +2,7 @@ import frappe
 
 no_cache = 1
 
-def get_context(context):
+def get_context(context, **kwargs):
     """Render the order tracking page."""
     context.no_sidebar = True
     context.no_breadcrumbs = True
@@ -11,11 +11,16 @@ def get_context(context):
     context.order_id = ""
 
     # Try to get order_id from multiple sources
-    # 1. Query parameter (?order_id=XXX) - most reliable
-    order_id = frappe.form_dict.get("order_id")
-    source = "query_param"
+    # 1. URL path kwargs (/track-order/<order_id>) - primary for Frappe routing
+    order_id = kwargs.get("order_id")
+    source = "route_kwargs" if order_id else None
 
-    # 2. Parse from URL path (/track-order/ORDER-ID)
+    # 2. Query parameter (?order_id=XXX) - fallback
+    if not order_id:
+        order_id = frappe.form_dict.get("order_id")
+        source = "query_param" if order_id else None
+
+    # 3. Parse from URL path (/track-order/ORDER-ID) - for direct URL access
     if not order_id:
         path = frappe.local.request.path.strip("/")
         parts = path.split("/")

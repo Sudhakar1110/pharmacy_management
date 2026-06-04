@@ -372,48 +372,89 @@ def get_cart_count():
     return {"count": count}
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def place_order(address_name=None, payment_method="COD", prescription_ref=None, notes=None):
     """Place an order from the cart."""
     try:
         return _place_order(address_name, payment_method, prescription_ref, notes)
     except Exception as e:
-        frappe.log_error(f"place_order failed: {e}", "Pharmacy Order")
-        return {"success": False, "message": str(e)}
+        # Log full error for debugging
+        error_details = {
+            "error": str(e),
+            "address_name": address_name,
+            "payment_method": payment_method,
+            "user": frappe.session.user
+        }
+        frappe.log_error(f"place_order failed: {str(e)}\n\nDetails: {error_details}", "Pharmacy Order Error")
+        
+        # Check if it's a validation error we can show to user
+        error_str = str(e)
+        if "login" in error_str.lower():
+            return {"success": False, "message": "Please login to place an order", "redirect": "/login"}
+        elif "address" in error_str.lower():
+            return {"success": False, "message": error_str}
+        elif "empty" in error_str.lower():
+            return {"success": False, "message": "Your cart is empty"}
+        else:
+            return {"success": False, "message": f"Failed to place order: {error_str}"}
 
 
 def _place_order(address_name=None, payment_method="COD", prescription_ref=None, notes=None):
     """Internal order placement - wrapped by place_order for consistent error handling."""
+    frappe.flags.in_import = True  # Skip some validations
+    
     cart = get_cart_data()
     if not cart.get("items"):
         frappe.throw(_("Your cart is empty"))
 
     user = frappe.session.user
+    
+    # Guest user check - redirect to login
+    if user == "Guest":
+        frappe.throw(_("Please login to place an order"))
+    
     email = frappe.db.get_value("User", user, "email") or user
     full_name = frappe.db.get_value("User", user, "full_name") or user
 
     # Ensure customer exists
     customer = frappe.db.get_value("Customer", {"email_id": email}, "name")
     if not customer:
-        customer_group = frappe.db.get_single_value("Selling Settings", "customer_group") or frappe.db.get_value("Customer Group", {"is_group": 0}, "name") or "Individual"
-        territory = frappe.db.get_single_value("Selling Settings", "territory") or frappe.db.get_value("Territory", {"is_group": 0}, "name") or "India"
-        customer = frappe.new_doc("Customer")
-        customer.customer_name = full_name
-        customer.customer_type = "Individual"
-        customer.customer_group = customer_group
-        customer.territory = territory
-        customer.email_id = email
-        customer.flags.ignore_permissions = True
-        customer.insert(ignore_permissions=True, ignore_mandatory=True)
+        # Create customer
+        customer_group = frappe.db.get_single_value("Selling Settings", "customer_group") or "Individual"
+        territory = frappe.db.get_single_value("Selling Settings", "territory") or "India"
+        customer_doc = frappe.new_doc("Customer")
+        customer_doc.customer_name = full_name
+        customer_doc.customer_type = "Individual"
+        customer_doc.customer_group = customer_group
+        customer_doc.territory = territory
+        customer_doc.email_id = email
+        customer_doc.flags.ignore_permissions = True
+        customer_doc.insert(ignore_permissions=True, ignore_mandatory=True)
+        customer = customer_doc.name
 
-    # Validate address
-    if not address_name or not frappe.db.exists("Address", address_name):
+    # Validate address - must be provided or exist
+    if not address_name:
+        frappe.throw(_("Please provide a shipping address"))
+    
+    if not frappe.db.exists("Address", address_name):
+        # Try to find existing address
         addresses = frappe.get_all("Address",
             filters={"email_id": email}, fields=["name"], limit=1)
         if addresses:
             address_name = addresses[0].name
         else:
-            frappe.throw(_("Please provide a shipping address"))
+            # Search by customer link
+            addr_links = frappe.get_all("Dynamic Link",
+                filters={"link_doctype": "Customer", "link_name": customer},
+                fields=["parent"])
+            if addr_links:
+                address_name = addr_links[0].parent
+            else:
+                frappe.throw(_("Shipping address not found. Please add an address first."))
+
+    # Check address exists
+    if not frappe.db.exists("Address", address_name):
+        frappe.throw(_("Invalid shipping address"))
 
     # Rx check — advisory, not blocking. Order is placed with "Prescription Pending" status.
     # The pharmacy will verify the Rx before dispensing.
