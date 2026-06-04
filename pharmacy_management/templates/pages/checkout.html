@@ -711,69 +711,29 @@ function saveAddressAndPlaceOrder(addr, btn) {
             try { msg = xhr.responseJSON?.message || msg; } catch(e) {}
             showToast(msg, 'danger');
         }
-    } catch(e) {}
-    
-    // Try meta tag
-    var metaToken = document.querySelector('meta[name="csrf-token"]');
-    if (metaToken) {
-        return metaToken.getAttribute('content');
     }
-    
-    // Try data attribute on form
-    var formToken = document.querySelector('[data-csrf-token]');
-    if (formToken) {
-        return formToken.getAttribute('data-csrf-token');
+});
+
+function getCsrfToken() {
+    if (typeof frappe !== 'undefined' && frappe.csrf_token) {
+        return frappe.csrf_token;
     }
-    
-    return '';
-}
-
-// Combined function to save address AND place order in one API call
-function placeOrderWithAddress(addr, btn) {
-    var notes = $('#orderNotes').val().trim();
-    
-    $.ajax({
-        url: '/api/method/pharmacy_management.api.checkout.place_order_with_address',
-        type: 'POST',
-        data: {
-            address_line1: addr.address_line1,
-            address_line2: addr.address_line2 || '',
-            city: addr.city,
-            state: addr.state,
-            pincode: addr.pincode,
-            phone: addr.phone || '',
-            country: 'India',
-            payment_method: selectedPayment,
-            notes: notes
-        },
-        headers: { 'X-Frappe-CSRF-Token': getCsrfToken() },
-        success: function(res) {
-            var result = res.message || res;
-            if (result && result.success) {
-                orderId = result.order_id;
-                console.log('Order placed successfully:', orderId);
-
-                if (selectedPayment === 'COD') {
-                    showSuccessModal('Order Placed!', '/order-confirmation?order_id=' + encodeURIComponent(orderId));
-                } else if (selectedPayment === 'UPI') {
-                    showUpiModal(result);
-                } else {
-                    initiateCardPayment(orderId, btn);
-                }
-            } else {
-                btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order \u2014 \u20B9' + cartGrandTotal.toFixed(2));
-                var errMsg = result && result.message ? result.message : 'Failed to place order. Please try again.';
-                showToast(errMsg, 'danger');
-                console.log('Order placement failed:', result);
-            }
-        },
-        error: function(xhr) {
-            btn.prop('disabled', false).html('<i class="bi bi-shield-check"></i> Place Order \u2014 \u20B9' + cartGrandTotal.toFixed(2));
-            var msg = parseApiError(xhr);
-            showToast(msg, 'danger');
-            console.error('Order placement failed:', xhr);
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta) {
+        return meta.getAttribute('content');
+    }
+    var tokenInput = document.querySelector('input[name="csrf_token"]');
+    if (tokenInput) {
+        return tokenInput.value;
+    }
+    var cookies = document.cookie.split(';');
+    for (var i = 0; i < cookies.length; i++) {
+        var c = cookies[i].trim();
+        if (c.indexOf('csrf_token=') === 0 || c.indexOf('X-Frappe-CSRF-Token=') === 0) {
+            return c.split('=')[1];
         }
-    });
+    }
+    return '';
 }
 
 // ====================================================================
@@ -912,12 +872,11 @@ function initiateCardPayment(oid, btn) {
                     method: 'pharmacy_management.api.cart.razorpay_verify',
                     args: {
                         order_id: oid,
-                        razorpay_payment_id: 'test_payment',
-                        razorpay_order_id: 'test_order',
-                        razorpay_signature: 'test_signature'
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_signature: response.razorpay_signature
                     },
-                    headers: { 'X-Frappe-CSRF-Token': getCsrfToken() },
-                    success: function(verifyRes) {
+                    callback: function(verifyRes) {
                         var vdata = verifyRes.message;
                         if (vdata && vdata.success) {
                             showSuccessModal('Payment Successful!', '/order-confirmation?order_id=' + encodeURIComponent(oid));
